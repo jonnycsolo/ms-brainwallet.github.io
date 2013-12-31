@@ -1215,7 +1215,7 @@
 
         var fval = 0;
         var o = txGetOutputs();
-        for (i in o) {
+        for (var i = 0 ; i < o.length ; i++) {
             TX.addOutput(o[i].dest, o[i].fval);
             fval += o[i].fval;
         }

@@ -77,7 +77,7 @@ var TX = new function () {
             }
         }
 
-        for (var i in outputs) {
+        for (var i = 0 ; i < outputs.length ; i++) {
             var address = outputs[i].address;
             var fval = outputs[i].value;
             var value = new BigInteger('' + Math.round(fval * 1e8), 10);
@@ -329,7 +329,7 @@ function tx_parseBCI(data, address) {
     delete unspenttxs;
     var unspenttxs = {};
     var balance = BigInteger.ZERO;
-    for (var i in txs) {
+    for (var i = 0 ; i < txs.length ; i++) {
         var o = txs[i];
         var lilendHash = o.tx_hash;
 
@@ -454,7 +454,7 @@ function btcstr2bignum(btc) {
 function parseScript(script) {
     var newScript = new Bitcoin.Script();
     var s = script.split(" ");
-    for (var i in s) {
+    for (var i = 0 ; i < s.length ; i++) {
         if (Bitcoin.Opcode.map.hasOwnProperty(s[i])){
             newScript.writeOp(Bitcoin.Opcode.map[s[i]]);
         } else {
