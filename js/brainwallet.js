@@ -983,6 +983,41 @@
         timeout = setTimeout(txRebuild, TIMEOUT);
     }
 
+    function txOnChangeAccount() {
+      var selected = $('#txAccounts').val();
+      if (selected != '') {
+        var json = $("#txRecoveryJson").val().trim();
+        var recover = JSON.parse(json);
+        var item = recover.addresses[selected];
+        $("#txRedemptionScript").val(item.public.redeemScript);
+        $("#txChainCode").val(item.chain.code);
+        txOnChangeRedemptionScript();
+      }
+    }
+
+    function txOnChangeRecoveryJson() {
+      var json = $("#txRecoveryJson").val().trim();
+      if (json[0] == '{') {
+        var recover = JSON.parse(json);
+        var $accounts = $('#txAccounts');
+        $accounts.html('');
+        $accounts.append($("<option />").val('').text('Select an account / gift to recover'));
+        $.each(recover.addresses, function(address) {
+          var item = recover.addresses[address];
+          var title = item.label;
+          if (item.chain) {
+            title = title + " from " + recover.addresses[item.chain.parent].label;
+          }
+          title = title + " - " + address;
+          $accounts.append($("<option />").val(address).text(title));
+        });
+      }
+      else {
+        $("#txRedemptionScript").val(json);
+        txOnChangeRedemptionScript();
+      }
+    }
+
     function txOnChangeRedemptionScript() {
         var bytes = Crypto.util.hexToBytes($('#txRedemptionScript').val());
         var redemption_script = new Bitcoin.Script(bytes);
@@ -1162,6 +1197,11 @@
 
         var eckey = new Bitcoin.ECKey(payload);
         eckey.setCompressed(compressed);
+        var chainCode = $('#txChainCode').val();
+        if (chainCode != '') {
+          var newkey = Bitcoin.ECKey.createECKeyFromChain(eckey.priv.toByteArrayUnsigned(), Crypto.util.hexToBytes(chainCode));
+          return newkey;
+        }
         return eckey;
     }
 
@@ -1481,8 +1521,8 @@
         if (getParam('d')) $('#txDest').val(getParam('d'));
 
         if (getParam('r')) {
-            $("#txRedemptionScript").val(getParam('r'));
-            txOnChangeRedemptionScript();
+            $("#txRecoveryJson").val(getParam('r'));
+            txOnChangeRecoveryJson();
             txGetUnspent();
         }
 
@@ -1495,6 +1535,8 @@
         onInput($('#txSec2'), txOnChangeSec);
         onInput($('#txSec3'), txOnChangeSec);
         onInput($('#txRedemptionScript'), txOnChangeRedemptionScript);
+        onInput($('#txRecoveryJson'), txOnChangeRecoveryJson);
+        onInput($('#txAccounts'), txOnChangeAccount);
         onInput($('#txUnspent'), txOnChangeUnspent);
         onInput($('#txHex'), txOnChangeHex);
         onInput($('#txJSON'), txOnChangeJSON);

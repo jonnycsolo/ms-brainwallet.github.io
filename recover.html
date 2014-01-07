@@ -50,11 +50,12 @@
             <fieldset>
               <legend>Spend Multisignature P2SH</legend>
               <div class="form-group">
-                <label class="col-lg-2 control-label" for="txRedemptionScript">Redemption Script</label>
+                <label class="col-lg-4 control-label" for="txRedemptionScript">Recovery JSON / Redemption Script</label>
                 <div class="col-lg-10 controls">
-                  <textarea class="form-control" id="txRedemptionScript" rows="5"></textarea>
+                  <textarea class="form-control" id="txRecoveryJson" rows="5"></textarea>
                 </div>
               </div>
+              <select id="txAccounts"></select>
               <div>&nbsp;<button class="btn btn-default help-inline" id="txGetUnspent" type="button">Get Balance</button>
               &nbsp;<button class="btn btn-default help-inline" id="txShowBCI" type="button">Show in blockchain.info</button></div>
               <div class="form-group" id="txSec1_group">
@@ -119,6 +120,18 @@
             </fieldset>
             <button class="btn btn-default" data-target="#txAdvanced" data-toggle="collapse" id="txToggle" type="button">Advanced</button>
             <div class="collapse" id="txAdvanced">
+              <div class="form-group">
+                <label class="col-lg-2 control-label" for="txRedemptionScript">Redemption Script</label>
+                <div class="col-lg-10 controls">
+                  <textarea class="form-control" id="txRedemptionScript" rows="5"></textarea>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-lg-2 control-label" for="txChainCode">Chain Code</label>
+                <div class="col-lg-10 controls">
+                  <input class="form-control" type='text' id="txChainCode" />
+                </div>
+              </div>
               <div class="form-group">
                 <label class="col-lg-2 control-label" for="txBBE">Use History From</label>
                 <div class="col-lg-10 controls">
