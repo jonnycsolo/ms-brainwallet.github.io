@@ -1032,15 +1032,17 @@
     }
 
     function txParseUnspent(text) {
-        if (text == '')
-            alert('No data');
+        if (text == '') {
+            alert('API error, or no balance at this address');
+            return;
+        }
         txSetUnspent(text);
     }
 
     function txGetUnspent() {
         var addr = $('#txAddr').val();
 
-        var url = (txType == 'txBCI') ? 'http://blockchain.info/unspent?address=' + addr :
+        var url = (txType == 'txBCI') ? 'https://blockchain.info/unspent?address=' + addr :
             'http://blockexplorer.com/q/mytransactions/' + addr;
 
         url = prompt('Press OK to download transaction history:', url);
@@ -1050,6 +1052,13 @@
         } else {
           txSetUnspent($('#txUnspent').val());
         }
+    }
+
+    function txShowBCI() {
+        var addr = $('#txAddr').val();
+
+        var url = 'https://blockchain.info/address/' + addr;
+        window.open(url, '_blank');
     }
 
     function txOnChangeJSON() {
@@ -1120,6 +1129,18 @@
         if (url != null && url != "") {
             tx_fetch(url, txSent, txSent, postdata);
         }
+        return false;
+    }
+
+    function txSendCoinbin() {
+        var r = '';
+        var tx = $('#txHex').val();
+
+        url = 'https://coinb.in/api/';
+        postdata = 'rawtx=' + tx + '&uid=1&key=12345678901234567890123456789012&setmodule=bitcoin&request=sendrawtransaction';
+        //url = prompt(r + 'Press OK to send transaction to:', url);
+        //tx_fetch(url, txSent, txSent, postdata);
+        window.open(url + '?' + postdata, '_blank');
         return false;
     }
 
@@ -1423,7 +1444,7 @@
         onInput('#extpub2', onChangeExtendedPublicKey);
         onInput('#extpub3', onChangeExtendedPublicKey);
         onInput('#extpublic_key_package', onChangeExtendedPublicKeyPackage);
-        onChangeExtendedPublicKey();
+        // onChangeExtendedPublicKey();
         
         onInput("#bip32private_key1", onChangeExtendedPrivateKey);
         onInput("#bip32private_key2", onChangeExtendedPrivateKey);
@@ -1447,7 +1468,7 @@
         $("#pubkey_order_prev").on('click', pubkey_order_prev );
         $("#pubkey_order_next").on('click', pubkey_order_next );
 
-        initializePublicKeys();
+        //initializePublicKeys();
         reqUpdateLabel();
         outofUpdateLabel();
 
@@ -1467,6 +1488,7 @@
 
 
         $('#txGetUnspent').click(txGetUnspent);
+        $('#txShowBCI').click(txShowBCI);
         $('#txType label input').on('change', txChangeType);
 
         onInput($('#txSec1'), txOnChangeSec);
@@ -1482,7 +1504,7 @@
 
         $('#txAddDest').click(txOnAddDest);
         $('#txRemoveDest').click(txOnRemoveDest);
-        $('#txSend').click(txSend);
+        $('#txSend').click(txSendCoinbin);
         $('#txSign').click(txSign);
 
         // converter
