@@ -990,7 +990,7 @@
         var recover = JSON.parse(json);
         var item = recover.addresses[selected];
         $("#txRedemptionScript").val(item.public.redeemScript);
-        $("#txChainCode").val(item.chain.code);
+        $("#txChainCode").val(item.chain ? item.chain.code : '');
         txOnChangeRedemptionScript();
       }
     }
