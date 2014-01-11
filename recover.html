@@ -55,9 +55,10 @@
                   <textarea class="form-control" id="txRecoveryJson" rows="5"></textarea>
                 </div>
               </div>
-              <select id="txAccounts"></select>
-              <div>&nbsp;<button class="btn btn-default help-inline" id="txGetUnspent" type="button">Get Balance</button>
-              &nbsp;<button class="btn btn-default help-inline" id="txShowBCI" type="button">Show in blockchain.info</button></div>
+              <select class='form-control collapse' id="txAccounts"></select>
+              <div>&nbsp;<!-- <button class="btn btn-default help-inline" id="txGetUnspent" type="button">Get Balance</button> -->
+                <img id="txLoading" class='collapse' src='images/ajax-loader.gif' />
+              </div>
               <div class="form-group" id="txSec1_group">
                 <label class="col-lg-2 control-label" for="txSec1">Private Key #1</label>
                 <div class="col-lg-10 controls">
@@ -70,7 +71,7 @@
                   <input class="form-control" id="txSec2" type="text" />
                 </div>
               </div>
-              <div class="form-group" id="txSec3_group">
+              <div class="form-group hidden" id="txSec3_group">
                 <label class="col-lg-2 control-label" for="txSec3">Private Key #3</label>
                 <div class="col-lg-10 controls">
                   <input class="form-control" id="txSec3" type="text" />
@@ -86,6 +87,8 @@
                     <div class="col-xs-3">
                       <span class="input-group"><span class="input-group-addon">BTC</span> <input class="form-control" id="txBalance" placeholder="0.00" type="text" /></span>
                     </div>
+                    <div class="col-xs-3">
+                      <button class="collapse btn btn-default help-inline" id="txShowBCI" type="button">Details</button></div>
                   </div>
                 </div>
               </div>

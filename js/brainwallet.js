@@ -984,22 +984,31 @@
     }
 
     function txOnChangeAccount() {
-      var selected = $('#txAccounts').val();
-      if (selected != '') {
+      var $selected = $('#txAccounts').val();
+      var $details = $('#txShowBCI');
+      if ($selected != '') {
         var json = $("#txRecoveryJson").val().trim();
         var recover = JSON.parse(json);
-        var item = recover.addresses[selected];
+        var item = recover.addresses[$selected];
         $("#txRedemptionScript").val(item.public.redeemScript);
         $("#txChainCode").val(item.chain ? item.chain.code : '');
         txOnChangeRedemptionScript();
+        $details.fadeIn();
+        txGetUnspent();
+      } else {
+        $("#txRedemptionScript").val('');
+        $("#txChainCode").val('');
+        txOnChangeRedemptionScript();
+        $details.fadeOut();
       }
     }
 
     function txOnChangeRecoveryJson() {
       var json = $("#txRecoveryJson").val().trim();
+      var $accounts = $('#txAccounts');
+      var $details = $('#txShowBCI');
       if (json[0] == '{') {
         var recover = JSON.parse(json);
-        var $accounts = $('#txAccounts');
         $accounts.html('');
         $accounts.append($("<option />").val('').text('Select an account / gift to recover'));
         $.each(recover.addresses, function(address) {
@@ -1011,15 +1020,26 @@
           title = title + " - " + address;
           $accounts.append($("<option />").val(address).text(title));
         });
+        $accounts.show('fold');
+        $details.hide();
       }
       else {
         $("#txRedemptionScript").val(json);
         txOnChangeRedemptionScript();
+        $accounts.hide();
+        $details.show();
       }
     }
 
     function txOnChangeRedemptionScript() {
-        var bytes = Crypto.util.hexToBytes($('#txRedemptionScript').val());
+        var script_hex = $('#txRedemptionScript').val().trim();
+        if (script_hex == '') {
+          $("#txAddr").val('');
+          $("#txSec3_group").addClass('hidden');
+          return;
+        }
+
+        var bytes = Crypto.util.hexToBytes(script_hex);
         var redemption_script = new Bitcoin.Script(bytes);
 
         // Hash the script to produce the bitcoin address:
@@ -1067,6 +1087,7 @@
     }
 
     function txParseUnspent(text) {
+        $('#txLoading').hide();
         if (text == '') {
             alert('API error, or no balance at this address');
             return;
@@ -1080,9 +1101,10 @@
         var url = (txType == 'txBCI') ? 'https://blockchain.info/unspent?address=' + addr :
             'http://blockexplorer.com/q/mytransactions/' + addr;
 
-        url = prompt('Press OK to download transaction history:', url);
+        //url = prompt('Press OK to download transaction history:', url);
         if (url != null && url != "") {
             $('#txUnspent').val('');
+            $('#txLoading').show();
             tx_fetch(url, txParseUnspent);
         } else {
           txSetUnspent($('#txUnspent').val());
