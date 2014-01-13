@@ -30,11 +30,49 @@
     <header class="navbar navbar-inverse navbar-fixed-top">
       <div class="container">
         <div class="navbar-header">
-          <button class="navbar-toggle" data-target=".bs-navbar-collapse" data-toggle="collapse" type="button"> <span class="icon-bar">&nbsp;</span> <span class="icon-bar">&nbsp;</span> <span class="icon-bar">&nbsp;</span></button> <a class="navbar-brand" href="/">BitGo Recovery</a>
+          <button class="navbar-toggle" data-target=".bs-navbar-collapse" data-toggle="collapse" type="button"> <span class="icon-bar">&nbsp;</span> <span class="icon-bar">&nbsp;</span> <span class="icon-bar">&nbsp;</span></button> <a class="navbar-brand" href="https://www.bitgo.com/">BitGo Offline Recovery</a>
         </div>
       </div>
     </header>
     <div class="container">
+        <div>
+          <strong>Welcome to the BitGo Offline Account Recovery tool.</strong> (<a data-target="#aboutDetails" data-toggle="collapse">About this tool</a>)<p>
+
+        <div id="aboutDetails" class="collapse">
+          <p>
+            BitGo ensures that your bitcoin is always in your control.  We created this tool so that 
+            you can always access your bitcoin even if you are temporarily unable to access the
+            <a href="https://www.bitgo.com/">BitGo</a> website.
+          </p>
+
+          <p>
+            You probably won't ever want to use this tool, as the <a href="https://www.bitgo.com/">BitGo</a>
+            website is safer and easier to use.  But the point is that you can - and if anything should ever
+            happen to BitGo, you don't need to worry that your bitcoin will be lost.  Your bitcoin is in your
+            pocket, not ours, which is exactly where it belongs.
+          </p>
+
+          <p>
+            <strong>How To Use This?</strong>
+          </p>
+          <p>
+            BitGo periodically sends each user a 'disaster preparedness' email which contains a JSON attachment
+            describing all of your accounts.  You will need this file as well as your BitGo Account KeyCard
+            (which you printed when you created each of your accounts) for each account you want to access.
+          </p>
+          
+          <p>
+            Using the backup information you provide, you can send your funds to a new account of your choosing.<p>
+          </p>
+
+          <p>
+            Caution:  This tool is intended for advanced users or emergency situations only.<p>
+          </p>
+
+          <a href="https://www.bitgo.com/"><button class="btn btn-primary" type="button">OK, Take Me Back To BitGo!</button></a>
+        </div>
+
+        </div>
         <div class="" id="tx">
           <form action="/" class="form-horizontal" method="get">
             <fieldset>
@@ -168,7 +206,7 @@
         <hr />
         <footer>
           <p>
-            This work of art is public domain, source code available at <a href="https://github.com/ms-brainwallet/ms-brainwallet.github.io">GitHub</a>.
+            The source code for this tool is available at <a href="https://github.com/ms-brainwallet/ms-brainwallet.github.io">GitHub</a> and is licensed under the Apache 2.0 Open Source license.
           </p>
         </footer>
       </div>
