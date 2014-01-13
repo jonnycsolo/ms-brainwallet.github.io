@@ -1088,24 +1088,30 @@
 
     function txParseUnspent(text) {
         $('#txLoading').hide();
-        if (text == '') {
-            alert('API error, or no balance at this address');
-            return;
-        }
         txSetUnspent(text);
     }
 
     function txGetUnspent() {
         var addr = $('#txAddr').val();
 
-        var url = (txType == 'txBCI') ? 'https://blockchain.info/unspent?address=' + addr :
+        var url = (txType == 'txBCI') ? 'https://blockchain.info/unspent?cors=true&address=' + addr :
             'http://blockexplorer.com/q/mytransactions/' + addr;
 
         //url = prompt('Press OK to download transaction history:', url);
         if (url != null && url != "") {
             $('#txUnspent').val('');
             $('#txLoading').show();
-            tx_fetch(url, txParseUnspent);
+            if (txType == 'txBCI')
+              tx_fetch(url, txParseUnspent, function(response, status) {
+                if (response == 'No free outputs to spend') {
+                  alert("Balance is zero");
+                } else {
+                  alert("Error: " + status + " : " + response);
+                }
+                txParseUnspent('[]');
+              });
+            else
+              tx_fetch_yql(url, txParseUnspent);
         } else {
           txSetUnspent($('#txUnspent').val());
         }
@@ -1167,7 +1173,16 @@
     }
 
     function txSent(text) {
-        alert(text ? text : 'No response!');
+      if (text) {
+        result = $(text).find('result').text();
+        if (result == 0) {
+          alert('Error: ' + $(text).find('response').text());
+        } else {
+          alert('Success!  Transaction ID: ' + $(text).find('txid').text());
+        }
+      } else {
+        alert('No response!');
+      }
     }
 
     function txSend() {
@@ -1184,7 +1199,7 @@
         postdata = 'tx=' + tx;
         url = prompt(r + 'Press OK to send transaction to:', url);
         if (url != null && url != "") {
-            tx_fetch(url, txSent, txSent, postdata);
+            tx_fetch_yql(url, txSent, txSent, postdata);
         }
         return false;
     }
@@ -1194,10 +1209,8 @@
         var tx = $('#txHex').val();
 
         url = 'https://coinb.in/api/';
-        postdata = 'rawtx=' + tx + '&uid=1&key=12345678901234567890123456789012&setmodule=bitcoin&request=sendrawtransaction';
-        //url = prompt(r + 'Press OK to send transaction to:', url);
-        //tx_fetch(url, txSent, txSent, postdata);
-        window.open(url + '?' + postdata, '_blank');
+        postdata = 'rawtx=' + tx + '&uid=1&key=12345678901234567890123456789012&setmodule=bitcoin&request=sendrawtransaction&cors=true';
+        tx_fetch(url, txSent, txSent, postdata);
         return false;
     }
 

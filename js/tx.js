@@ -373,18 +373,14 @@ function parseScript(script) {
 // --->8---
 
 // Some cross-domain magic (to bypass Access-Control-Allow-Origin)
-function tx_fetch(url, onSuccess, onError, postdata) {
-    var useYQL = true;
-
-    if (useYQL) {
-        var q = 'select * from html where url="'+url+'"';
-        if (postdata) {
-            q = 'use "http://brainwallet.github.com/js/htmlpost.xml" as htmlpost; ';
-            q += 'select * from htmlpost where url="' + url + '" ';
-            q += 'and postdata="' + postdata + '" and xpath="//p"';
-        }
-        url = 'https://query.yahooapis.com/v1/public/yql?q=' + encodeURIComponent(q);
+function tx_fetch_yql(url, onSuccess, onError, postdata) {
+    var q = 'select * from html where url="'+url+'"';
+    if (postdata) {
+        q = 'use "http://brainwallet.github.com/js/htmlpost.xml" as htmlpost; ';
+        q += 'select * from htmlpost where url="' + url + '" ';
+        q += 'and postdata="' + postdata + '" and xpath="//p"';
     }
+    url = 'https://query.yahooapis.com/v1/public/yql?q=' + encodeURIComponent(q);
 
     $.ajax({
         url: url,
@@ -394,6 +390,21 @@ function tx_fetch(url, onSuccess, onError, postdata) {
         error:function (xhr, opt, err) {
             if (onError)
                 onError(err);
+        }
+    });
+}
+
+function tx_fetch(url, onSuccess, onError, postdata) {
+    $.ajax({
+        url: url,
+        dataType: 'text',
+        data: postdata,
+        success: function(res) {
+            onSuccess(res);
+        },
+        error:function (xhr, opt, err) {
+            if (onError)
+                onError(xhr.responseText, err);
         }
     });
 }
