@@ -433,7 +433,7 @@
         var chain_index = parseInt($("#chain_index").val(), 10);
         if( isNaN(chain_index) || chain_index < 0 || chain_index > 0x7fffffff ) return;
 
-        var path_prefix = 'm/0/0/';
+        var path_prefix = 'm/';
 
         if( keyset.key1 !== null ) {
             var d = keyset.key1.derive(path_prefix + chain_index);

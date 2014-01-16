@@ -158,6 +158,7 @@ BIP32.prototype.derive = function(path) {
 
     var bip32 = this;
     for( var i in e ) {
+        if (!e.hasOwnProperty(i)) continue;
         var c = e[i];
 
         if( i == 0 ) {
