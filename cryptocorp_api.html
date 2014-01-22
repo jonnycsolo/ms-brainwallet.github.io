@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<meta charset="utf-8" />
+		<title>
+			CC API 02
+		</title>
+	    <link href="css/bootstrap.min.css" rel="stylesheet" />
+	    <link href="css/brainwallet.css" rel="stylesheet" />
+	    <link href="favicon.ico" rel="shortcut icon" />
+	    <script src="js/jquery.js"></script>
+	    <script src="js/bootstrap.min.js"></script>
+	    <script src="js/sjcl.min.js"></script>
+	    <script src="js/bitcoinjs-lib.js"></script>
+	    <script src="js/sha512.js"></script>
+	    <script src="js/modsqrt.js"></script>
+	    <script src="js/qrcode.js"></script>
+	    <script src="js/rfc1751.js"></script>
+	    <script src="js/mnemonic.js"></script>
+	    <script src="js/armory.js"></script>
+	    <script src="js/electrum.js"></script>
+	    <script src="js/tx.js"></script>
+	    <script src="js/bitcoinsig.js"></script>
+	    <script src="js/brainwallet.js"></script>
+	    <script src="js/cryptocorp.js"></script>
+
+		
+<script>
+
+$(function() {
+    $('#createButton').click( onClickCreateWallet );
+    $('#signTxButton').click( onClickSignTx );
+    $('#oracle_generate_button').click( onClickGenerate );
+});
+
+// =============================
+// Generate
+// =============================
+function onClickGenerate( event ) {
+	var url = $('#oracle_url').val();
+	CryptoCorp.setOracleUrl( url ) ;
+	
+	var extpub1 = $("#oracle_extpub1").val();
+	var extpub2 = $("#oracle_extpub2").val();
+	
+	var b1 = new BIP32(extpub1);
+	var b2 = new BIP32(extpub2);
+	var pubKeyHex1 = Crypto.util.bytesToHex(b1.eckey.pub.getEncoded(true));
+	var pubKeyHex2 = Crypto.util.bytesToHex(b2.eckey.pub.getEncoded(true));
+	
+	$("#pub1").val(pubKeyHex1);
+	$("#pub2").val(pubKeyHex2);
+	
+	var rulesetId = "ugz284";
+	var keys = [ extpub1, extpub2 ];
+	var parameters = { "velocity_1": {"value": 200, "asset": "EUR", "period": 86400, limited_keys: [0], "delay": 3600}} ;
+	var pii = { "encrypted": "fef8345f", "email": "user@example.com" } ;
+	
+	var walletId = "xue574"
+	
+	var data = CryptoCorp.getWalletData( rulesetId, keys, parameters, pii );
+	CryptoCorp.CreateWallet( walletId, data, generateCreateWalletCallback ) ;	
+}
+
+function generateCreateWalletCallback( response ) {
+	// fail
+	if (response.result != "success") {
+		// error handling
+		if (response.thrownError != 'undefined') {
+			alert( "Create Wallet failed: " + response.thrownError );
+		}
+		return;
+	}
+	// success
+	var extpub3 = response.keys.default[0];
+	var b3 = new BIP32(extpub3);
+	var pubKeyHex3 = Crypto.util.bytesToHex(b3.eckey.pub.getEncoded(true));
+	$("#pub3").val(pubKeyHex3);
+	alert( "Create Wallet: keys: " + pubKeyHex3 );
+	
+	var script = CryptoCorp.generate_redemption_script($("#pub1").val(), $("#pub2").val(), $("#pub3").val() );
+	$("#redemption_script").val(script);
+}
+
+
+//522102ef42cd0e76508b331f00f37a50a88e624788e1924c5d0cceceb275f3716042ae2102ef42cd0e76508b331f00f37a50a88e624788e1924c5d0cceceb275f3716042ae2102fc9e5af0ac8d9b3cecfe2a888e2117ba3d089d8585886c9c826b6b22a98d12ea53ae
+
+//522102ef42cd0e76508b331f00f37a50a88e624788e1924c5d0cceceb275f3716042ae2102ef42cd0e76508b331f00f37a50a88e624788e1924c5d0cceceb275f3716042ae2102fc9e5af0ac8d9b3cecfe2a888e2117ba3d089d8585886c9c826b6b22a98d12ea53ae
+
+
+
+// =============================
+// Create Wallet
+// =============================
+function onClickCreateWallet( event ) {
+	
+	var walletId = $("#walletId").val();	
+	var rulesetId = $("#rulesetId").val();
+	var parameters = eval('('+ $("#parameters").val() +')');
+	var keys = eval('('+ $("#keys").val() +')');
+	var pii = eval('('+ $("#pii").val() +')');
+	// CryptoCorp
+	var data = CryptoCorp.getWalletData( rulesetId, keys, parameters, pii );
+	CryptoCorp.CreateWallet( walletId, data, createWalletCallback ) ;	
+}
+
+function createWalletCallback( response ) {
+	if (response.result != "success") {
+		// error handling
+		if (response.thrownError != 'undefined') {
+			alert( "Create Wallet failed: " + response.thrownError );
+		}
+		return;
+	}
+	// success
+	var keys = response.keys;
+	alert( "Create Wallet: keys: " + keys.default[0] );
+}
+
+
+// =============================
+// Sign Tx
+// =============================
+function onClickSignTx( event ) {
+	
+	var walletId = $("#txWalletId").val();	
+	var bytes = $("#bytes").val();
+	var inputScripts = $("#inputScripts").val();
+	var data = CryptoCorp.getSignTxData( bytes, inputScripts);
+	CryptoCorp.SignTx( walletId, data, signTxCallback ) ;	
+}
+
+function signTxCallback( response ) {
+	// fail
+	if (response.result == "error") {
+		// error handling
+		alert( "Sign Transaction failed: " + response.thrownError );
+		return;
+	}
+	// deferred
+	if (response.result == "deferred") {
+		// state handling
+		var deferral = response.deferral ;
+		alert( "Sign Transaction deferred: " + deferral.reason );
+		return;
+	}
+	// success
+	alert( "Sign Transaction: signed: " + response.transaction );
+}
+
+
+</script> 
+
+	</head>
+	<body onclick="" onkeypress="">
+		<header>
+		</header>
+		
+		
+		<div class="container">
+			<div>
+				<strong>
+					Generate Redemption Script 
+				</strong>
+				<p>
+			</div>
+		</div>
+		<div class="">
+			<form action="/" class="form-horizontal" method="get">
+				<fieldset>
+	                <div class="form-group" id="pub1_group">
+	                  <label class="col-lg-2 control-label" for="pub1">Public Key #1 (SEC))</label>
+	                  <div class="col-lg-10 controls">
+	                    <div class="input-append">
+	                      <input class="form-control" id="pub1" type="text" readonly/>
+	                    </div>
+	                  </div>
+	                </div>
+	                <div class="form-group" id="pub2_group">
+	                  <label class="col-lg-2 control-label" for="pub2">Public Key #2 (SEC)</label>
+	                  <div class="col-lg-10 controls">
+	                    <div class="input-append">
+	                      <input class="form-control" id="pub2" type="text" readonly/>
+	                    </div>
+	                  </div>
+	                </div>
+	                <div class="form-group" id="pub3_group">
+	                  <label class="col-lg-2 control-label" for="pub3">Public Key #3 (SEC)</label>
+	                  <div class="col-lg-10 controls">
+	                    <div class="input-append">
+	                      <input class="form-control" id="pub3" type="text" readonly />
+	                    </div>
+	                  </div>
+	                </div>
+			  
+			  
+			  
+	                <div class="form-group" id="oracle_extpub1_group">
+	                  <label class="col-lg-2 control-label" for="oracle_extpub1">Extended Public Key #1</label>
+	                  <div class="col-lg-10 controls">
+	                    <div class="input-append">
+	                      <input class="form-control" id="oracle_extpub1" type="text" value="xpub68rQ8y4gfHomwgRXYEnASw2sCcwSnSTArUV4opvWfrCX6NCLZRhpMHKyMVJSjCp5NzQkVKRM3mJzzwSfsisznELZtCVS5F3AAn8JJ2NoCzT"/>
+	                    </div>
+	                  </div>
+	                </div>
+	                <div class="form-group" id="oracle_extpub2_group">
+	                  <label class="col-lg-2 control-label" for="oracle_extpub2">Extended Public Key #2</label>
+	                  <div class="col-lg-10 controls">
+	                    <div class="input-append">
+	                      <input class="form-control" id="oracle_extpub2" type="text"  value="xpub68rQ8y4gfHomwgRXYEnASw2sCcwSnSTArUV4opvWfrCX6NCLZRhpMHKyMVJSjCp5NzQkVKRM3mJzzwSfsisznELZtCVS5F3AAn8JJ2NoCzT"/>
+	                    </div>
+	                  </div>
+	                </div>			  
+			  
+	                <div class="form-group" id="oracle_group">
+	                  <label class="col-lg-2 control-label" for="oracle_url">Oracle (URL)</label>
+	                  <div class="col-lg-10 controls">
+	                    <div class="input-append">
+	                      <input class="form-control" id="oracle_url" type="text" value="http://btc2.hyper.to" />
+	  					<button class="btn btn-default" id="oracle_generate_button" type="button">Generate</button>
+	                    </div>
+	                  </div>
+	                </div>
+					
+	                <div class="form-group">
+	                  <label class="col-lg-2 control-label" for="redeption_script">Redemption Script</label>
+	                  <div class="col-lg-10 controls">
+	                    <textarea class="form-control" id="redemption_script" readonly="readonly" rows="5"></textarea>
+	                  </div>
+	                </div>
+					
+				</fieldset>
+			</form>
+		</div>
+		
+		<hr>
+		<div class="container">
+			<div>
+				<strong>
+					Create New Wallet 
+				</strong>
+				<p>
+			</div>
+		</div>
+		<div class="">
+			<form action="/" class="form-horizontal" method="get">
+				<fieldset>
+					<div class="form-group" id="walletId_group">
+						<label class="col-lg-2 control-label" for="walletId">
+							Wallet ID 
+						</label>
+						<div class="col-lg-10 controls">
+							<input class="form-control" id="walletId" type="text" value="xue574" />
+						</div>
+					</div>
+					<div class="form-group" id="rulesetId_group">
+						<label class="col-lg-2 control-label" for="rulesetId">
+							Ruleset
+						</label>
+						<div class="col-lg-10 controls">
+							<input class="form-control" id="rulesetId" type="text" value="ugz284" />
+						</div>
+					</div>
+					<div class="form-group" id="keys_group">
+						<label class="col-lg-2 control-label" for="keys">
+							Keys
+						</label>
+						<div class="col-lg-10 controls">
+							<input class="form-control" id="keys" type="text" value='["xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH"]' />
+						</div>
+					</div>
+					<div class="form-group" id="pars_group">
+						<label class="col-lg-2 control-label" for="parameters">
+							Parameters
+						</label>
+						<div class="col-lg-10 controls">
+							<input class="form-control" id="parameters" type="text" value='{ "velocity_1": {"value": 200, "asset": "EUR", "period": 86400, limited_keys: [0], "delay": 3600}}'/>
+						</div>
+					</div>
+					<div class="form-group" id="pii_group">
+						<label class="col-lg-2 control-label" for="pii">
+							PII 
+						</label>
+						<div class="col-lg-10 controls">
+							<input class="form-control" id="pii" type="text" value='{ "encrypted": "fef8345f", "email": "user@example.com" }'/>
+						</div>
+					</div>
+					<div class="form-group" id="create_group">
+						<label class="col-lg-2 control-label" for="walletJson">
+						</label>
+						<div class="col-lg-10 controls">
+							<button class="btn btn-default" id="createButton" type="button">Create</button>
+						</div>
+					</div>
+					
+				</fieldset>
+			</form>
+		</div>
+		
+		
+		<hr>
+		<div class="container">
+			<div>
+				<strong>
+					Sign Transaction 
+				</strong>
+				<p>
+			</div>
+		</div>
+		<div class="">
+			<form action="/" class="form-horizontal" method="get">
+				<fieldset>
+					<div class="form-group" id="txWalletId_group">
+						<label class="col-lg-2 control-label" for="txWalletId">
+							Wallet ID 
+						</label>
+						<div class="col-lg-10 controls">
+							<input class="form-control" id="txWalletId" type="text" value="tx1234" />
+						</div>
+					</div>
+					<div class="form-group" id="bytes_group">
+						<label class="col-lg-2 control-label" for="bytes">
+							Bytes 
+						</label>
+						<div class="col-lg-10 controls">
+							<input class="form-control" id="bytes" type="text" value="010000000119e141500c2b4af9ad806a904ea636dd9fe67d41c03032b038176464612c5a94020000008b4830450220686896938c7e3ba2cf6a9d5ee350f807739361c5bc8e9285db2bddd27b24a5b1022100c87f1ec5b7dd6cd7995df39101e2fe0cfe48a3c1e909ce057a696ff3305494670141042d233595730153d3f514e824b4d882ee1992c359df4d501282b0bff5fbcd4eadcbf22e9409a9d15330a134842bd065348ffad6c7f76f65fa29d958456d47ce1fffffffff03c0ac899f000000001976a9142f74e963616d47c1eec274d1cb45cfd56cf0606288ac409c0000000000001976a91406bad1c6c8d1179222ab22cec15fd1dc4b82dc0888ac8d08b8a4050000001976a914bd91cb69549508f342bbdaa0fd66fa53de1a854488ac00000000" />
+						</div>
+					</div>
+					<div class="form-group" id="inputScripts_group">
+						<label class="col-lg-2 control-label" for="inputScripts">
+							Input Scripts 
+						</label>
+						<div class="col-lg-10 controls">
+							<input class="form-control" id="inputScripts" type="text" value='["ef8347c4", null]' />
+						</div>
+					</div>
+					<div class="form-group" id="sign_tx_group">
+						<label class="col-lg-2 control-label" for="signTxButton">
+						</label>
+						<div class="col-lg-10 controls">
+							<button class="btn btn-default" id="signTxButton" type="button">Sign Tx</button>
+						</div>
+					</div>
+					
+				</fieldset>
+			</form>
+		</div>
+		
+		
+		
+		
+	</body>
+</html>
