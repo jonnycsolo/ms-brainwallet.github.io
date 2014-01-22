@@ -1233,7 +1233,7 @@
         var eckey = new Bitcoin.ECKey(payload);
         eckey.setCompressed(compressed);
         var chainCode = $('#txChainCode').val();
-        if (chainCode != '') {
+        if (chainCode !== undefined && chainCode != '') {
           var newkey = Bitcoin.ECKey.createECKeyFromChain(eckey.priv.toByteArrayUnsigned(), Crypto.util.hexToBytes(chainCode));
           return newkey;
         }
