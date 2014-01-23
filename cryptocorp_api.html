@@ -3,7 +3,7 @@
 	<head>
 		<meta charset="utf-8" />
 		<title>
-			CC API 03
+			CC API 04
 		</title>
 	    <link href="css/bootstrap.min.css" rel="stylesheet" />
 	    <link href="css/brainwallet.css" rel="stylesheet" />
@@ -34,63 +34,6 @@ $(function() {
     $('#oracle_spend_button').click( onClickSpend );
 });
 
-
-// =============================
-// Generate
-// =============================
-function onClickSpend( event ) {
-	var url = $('#oracle_url').val();
-	CryptoCorp.setOracleUrl( url );
-	
-    var redemption_script_bytes = Bitcoin.Base58.decode($('#spendRedemptionScript').val());
-    var redemption_script_hex = Crypto.util.bytesToHex( redemption_script_bytes );
-    var redemption_script = new Bitcoin.Script(redemption_script_bytes);	
-	
-	var priv1 = $("#spend_priv1").val();
-	var priv2 = $("#spend_priv2").val();
-	
-    var eckeys = new Array();
-	eckeys.push(priv1);
-	
-	var txHex, txBytes;
-    try {
-	    var theTx = new Bitcoin.Transaction();
-        theTx.clearOutputs();
-        theTx.signWithMultiSigScript(eckeys, redemption_script.buffer);
-        var txJSON = TX.toBBE(theTx);
-        txBytes = theTx.serialize();
-        txHex = Crypto.util.bytesToHex(txBytes);
-    } catch(err) {
-        if( ('' + err) == 'Version 5 not supported!' ) {
-            alert("The current version of BitcoinJS does not support spending to P2SH addresses yet.")
-			return;
-        }
-		alert( "ERROR: " + err );
-		return ;
-    }
-	
-	var walletId = $("#spend_walletId").val();	
-	var data = CryptoCorp.getSignTxData( txBytes, redemption_script.buffer);
-	CryptoCorp.SignTx( walletId, data, spendCallback ) ;	
-}
-
-function spendCallback( response ) {
-	// fail
-	if (response.result == "error") {
-		// error handling
-		alert( "Sign Transaction failed: " + response.thrownError );
-		return;
-	}
-	// deferred
-	if (response.result == "deferred") {
-		// state handling
-		var deferral = response.deferral ;
-		alert( "Sign Transaction deferred: " + deferral.reason );
-		return;
-	}
-	// success
-	alert( "Sign Transaction: signed: " + response.transaction );
-}
 
 // =============================
 // Generate
@@ -167,7 +110,7 @@ function createWalletCallback( response ) {
 	if (response.result != "success") {
 		// error handling
 		if (response.thrownError != 'undefined') {
-			alert( "Create Wallet failed: " + response.thrownError );
+			alert( "Create Wallet failed: " + response.errorThrown );
 		}
 		return;
 	}
@@ -182,10 +125,12 @@ function createWalletCallback( response ) {
 // =============================
 function onClickSignTx( event ) {
 	
-	var walletId = $("#txWalletId").val();	
+	var walletId = $("#txWalletId").val();
+	var signatureIndex = $("#signatureIndex").val();
 	var bytes = $("#bytes").val();
-	var inputScripts = $("#inputScripts").val();
-	var data = CryptoCorp.getSignTxData( bytes, inputScripts);
+	var inputScripts = eval('('+ $("#inputScripts").val() +')');
+	var chainPaths =  eval('('+ $("#chainPaths").val() +')');
+	var data = CryptoCorp.getSignTxData( signatureIndex, bytes, inputScripts, chainPaths);
 	CryptoCorp.SignTx( walletId, data, signTxCallback ) ;	
 }
 
@@ -193,7 +138,7 @@ function signTxCallback( response ) {
 	// fail
 	if (response.result == "error") {
 		// error handling
-		alert( "Sign Transaction failed: " + response.thrownError );
+		alert( "Sign Transaction failed: " + response.errorThrown );
 		return;
 	}
 	// deferred
@@ -231,115 +176,7 @@ function signTxCallback( response ) {
 			</form>
 		</div>
 		
-		<div class="container">
-			<div>
-				<strong>
-					Spend
-				</strong>
-				<p>
-			</div>
-		</div>
-		<div class="">
-			<form action="/" class="form-horizontal" method="get">
-				<fieldset>
-					<div class="form-group" id="spend_walletId_group">
-						<label class="col-lg-2 control-label" for="spend_walletId">
-							Wallet ID 
-						</label>
-						<div class="col-lg-10 controls">
-							<input class="form-control" id="spend_walletId" type="text" value="xue574" />
-						</div>
-					</div>
-			        <div class="form-group">
-			          <label class="col-lg-2 control-label" for="txRedemptionScript">Redemption Script</label>
-			          <div class="col-lg-10 controls">
-			            <textarea class="form-control" id="spendRedemptionScript" rows="5" >TP11YncGiMESWaZBFbkVnrL4HNVnHVqesxkVDNFA1fYBK2edbizzDzQsp5VfV5UiBJb3qoozeLqUWdonXFRxNKDLT59Nvf1bTxAEb6advVCmRXSEVb4Pvrn1tcR9KXE5rkk8fpcXArPFsvzpCs1hEZQZHPEtUqJueQ5AK1AZBs9a8JnVC2j74vBivpKMDQG99b7tRStDMuu5BgNYcqENhvKZD9zvkrPUiFsK</textarea>
-			          </div>
-			        </div>
-			        <div class="form-group" id="spend_priv1_group">
-			          <label class="col-lg-2 control-label" for="spend_priv1">Private Key #1</label>
-			          <div class="col-lg-10 controls">
-			            <input class="form-control" id="spend_priv1" type="text" value="5K6jZ456WetZ6tBS2XFv1YMw3eHndMf79hSwjcskgBgGgbd3RYn"/>
-			          </div>
-			        </div>
-			        <div class="form-group" id="spend_priv2_group">
-			          <label class="col-lg-2 control-label" for="spend_priv2">Private Key #2</label>
-			          <div class="col-lg-10 controls">
-			            <input class="form-control" id="spend_priv2" type="text" value="5Ji2St8RrC3A2gEewJ6CcYk4VPw91ArWFiacPn5kGazxc9RRiaN"/>
-	  					<button class="btn btn-default" id="oracle_spend_button" type="button">Spend</button>
-			          </div>
-			        </div>
-				</fieldset>
-			</form>
-		</div>
-		
-		<!-- ---------------------------------------------------------- -->
-		<div class="container">
-			<div>
-				<strong>
-					Generate Redemption Script 
-				</strong>
-				<p>
-			</div>
-		</div>
-		<div class="">
-			<form action="/" class="form-horizontal" method="get">
-				<fieldset>
-	                <div class="form-group" id="pub1_group">
-	                  <label class="col-lg-2 control-label" for="pub1">Public Key #1 (SEC))</label>
-	                  <div class="col-lg-10 controls">
-	                    <div class="input-append">
-	                      <input class="form-control" id="pub1" type="text" readonly/>
-	                    </div>
-	                  </div>
-	                </div>
-	                <div class="form-group" id="pub2_group">
-	                  <label class="col-lg-2 control-label" for="pub2">Public Key #2 (SEC)</label>
-	                  <div class="col-lg-10 controls">
-	                    <div class="input-append">
-	                      <input class="form-control" id="pub2" type="text" readonly/>
-	                    </div>
-	                  </div>
-	                </div>
-	                <div class="form-group" id="pub3_group">
-	                  <label class="col-lg-2 control-label" for="pub3">Public Key #3 (SEC)</label>
-	                  <div class="col-lg-10 controls">
-	                    <div class="input-append">
-	                      <input class="form-control" id="pub3" type="text" readonly />
-	                    </div>
-	                  </div>
-	                </div>
-			  
-			  
-			  
-	                <div class="form-group" id="oracle_extpub1_group">
-	                  <label class="col-lg-2 control-label" for="oracle_extpub1">Extended Public Key #1</label>
-	                  <div class="col-lg-10 controls">
-	                    <div class="input-append">
-	                      <input class="form-control" id="oracle_extpub1" type="text" value="xpub68rQ8y4gfHomwgRXYEnASw2sCcwSnSTArUV4opvWfrCX6NCLZRhpMHKyMVJSjCp5NzQkVKRM3mJzzwSfsisznELZtCVS5F3AAn8JJ2NoCzT"/>
-	                    </div>
-	                  </div>
-	                </div>
-	                <div class="form-group" id="oracle_extpub2_group">
-	                  <label class="col-lg-2 control-label" for="oracle_extpub2">Extended Public Key #2</label>
-	                  <div class="col-lg-10 controls">
-	                    <div class="input-append">
-	                      <input class="form-control" id="oracle_extpub2" type="text"  value="xpub68rQ8y4gfHomwgRXYEnASw2sCcwSnSTArUV4opvWfrCX6NCLZRhpMHKyMVJSjCp5NzQkVKRM3mJzzwSfsisznELZtCVS5F3AAn8JJ2NoCzT"/>
-	                    </div>
-	                  </div>
-	                </div>			  
-			  
-	                <div class="form-group">
-	                  <label class="col-lg-2 control-label" for="redeption_script">Redemption Script</label>
-	                  <div class="col-lg-10 controls">
-	                    <textarea class="form-control" id="redemption_script" readonly="readonly" rows="5"></textarea>
-	                  </div>
-	                </div>
-					
-				</fieldset>
-			</form>
-		</div>
-		
+		<!-- -------------------------------------------------------------------------------------- -->
 		<hr>
 		<div class="container">
 			<div>
@@ -425,6 +262,14 @@ function signTxCallback( response ) {
 							<input class="form-control" id="txWalletId" type="text" value="tx1234" />
 						</div>
 					</div>
+					<div class="form-group" id="signatureIndex_group">
+						<label class="col-lg-2 control-label" for="signatureIndex">
+							Signature Index 
+						</label>
+						<div class="col-lg-10 controls">
+							<input class="form-control" id="signatureIndex" type="text" value="1" />
+						</div>
+					</div>
 					<div class="form-group" id="bytes_group">
 						<label class="col-lg-2 control-label" for="bytes">
 							Bytes 
@@ -439,6 +284,14 @@ function signTxCallback( response ) {
 						</label>
 						<div class="col-lg-10 controls">
 							<input class="form-control" id="inputScripts" type="text" value='["ef8347c4", null]' />
+						</div>
+					</div>
+					<div class="form-group" id="chainPaths_group">
+						<label class="col-lg-2 control-label" for="chainPaths">
+							Chain Paths 
+						</label>
+						<div class="col-lg-10 controls">
+							<input class="form-control" id="chainPaths" type="text" value='["0&apos;/234"]' />
 						</div>
 					</div>
 					<div class="form-group" id="sign_tx_group">
