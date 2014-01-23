@@ -96,8 +96,8 @@ var CryptoCorp = new function () {
 		return data;
 	}
 	
-	this.getSignTxData = function( bytes, inputScripts ) {
-		var data  = { "transaction": { "bytes" : bytes, "inputScripts": eval('(' + inputScripts + ')') }};
+	this.getSignTxData = function( signatureIndex, bytes, inputScripts, chainPaths ) {
+		var data  = {"signatureIndex": signatureIndex, "transaction": {"bytes": bytes}, "inputScripts": inputScripts, "chainPaths": chainPaths};
 		return data;
 	}
 	

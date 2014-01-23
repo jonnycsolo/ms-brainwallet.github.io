@@ -1233,7 +1233,7 @@
         var eckey = new Bitcoin.ECKey(payload);
         eckey.setCompressed(compressed);
         var chainCode = $('#txChainCode').val();
-        if (chainCode != '') {
+        if (chainCode !== undefined && chainCode != '') {
           var newkey = Bitcoin.ECKey.createECKeyFromChain(eckey.priv.toByteArrayUnsigned(), Crypto.util.hexToBytes(chainCode));
           return newkey;
         }
@@ -1254,8 +1254,126 @@
         }
         return false;
     }
+	
+	function oracleTxSign() {
+		
+		var unspent = $('#txUnspent').val();
+		if( unspent=='undefined' || unspent=='') {
+		    txGetUnspent() ;
+			return ;
+		}
+		
+        var bytes = Crypto.util.hexToBytes($('#txRedemptionScript').val());
+        var redemption_script = new Bitcoin.Script(bytes);
+        var m = redemption_script.buffer[0] - Bitcoin.Opcode.map["OP_1"] + 1;
+        var n = redemption_script.buffer[redemption_script.buffer.length-2] - Bitcoin.Opcode.map["OP_1"] + 1;
+		
+		m=1; //-ls
+        var eckey1 = (m >= 1) ? txKey(1) : null;
+		
+        var eckeys = new Array();
+
+        // Need to determine the order of the keys in the redemption script.
+        // And build 'eckeys' in an order that matches
+        var pubkey1 = (n >= 1) ? redemption_script.chunks[1] : null;
+        var pubkeys = [pubkey1, null, null];
+		
+        for( var j = 0; j < pubkeys.length; j++ ) {
+            if( pubkeys[j] === null ) continue;
+
+            if( m >= 1 && pubkey_matches_privkey(pubkeys[j], eckey1) ) { 
+				eckeys.push(eckey1);
+			}
+        }
+		
+        if( m >= 1 && !array_has_object(eckeys, eckey1) ) { 
+			setErrorState($('#txSec1'), true, 'Key is not valid for redemption script');
+		}
+		
+        if( eckeys.length < m ) {
+            $('#txJSON').val('');
+            $('#txHex').val('');
+            return;
+        }
+		
+        var addr = $('#txAddr').val();
+        var unspent = $('#txUnspent').val();
+        var fee = parseFloat('0'+$('#txFee').val());
+
+        parseInputs(unspent, addr);
+
+        theTx.clearOutputs();
+
+        var fval = 0;
+        var o = txGetOutputs();
+        for (var i = 0 ; i < o.length ; i++) {
+            if (o[i].dest != "") {
+                fval += o[i].fval;
+                var value = new BigInteger('' + Math.round(o[0].fval * 1e8), 10);
+                theTx.addOutput(new Bitcoin.Address(o[0].dest), value);
+            }
+        }
+
+        // send change back or it will be sent as fee
+        var change = Bitcoin.Util.formatValue(balance) - fval - fee;
+        var changeValue = new BigInteger('' + Math.round(change * 1e8), 10);
+        if (changeValue > 0) {
+            theTx.addOutput(new Bitcoin.Address(addr), changeValue);
+        }
+
+        try {
+            theTx.signWithMultiSigScript(eckeys, redemption_script.buffer);
+            var txJSON = TX.toBBE(theTx);
+            var buf = theTx.serialize();
+            var txHex = Crypto.util.bytesToHex(buf);
+            setErrorState($('#txJSON'), false, '');
+            $('#txJSON').val(txJSON);
+            $('#txHex').val(txHex);
+        } catch(err) {
+            if( ('' + err) == 'Version 5 not supported!' ) {
+                alert("The current version of BitcoinJS does not support spending to P2SH addresses yet.")
+            }
+            $('#txJSON').val('');
+            $('#txHex').val('');
+			return ;
+        }
+		// go
+		var walletId = "xue574"; // ?		
+        var bytes = theTx.serialize();
+        var bytesHex = Crypto.util.bytesToHex(bytes);
+		var inputScriptString = $("#txRedemptionScript").val();
+		var inputScripts = [ inputScriptString ];
+		var signatureIndex = 1;
+		var chainPaths = ["0'/234"];
+		var data = CryptoCorp.getSignTxData( signatureIndex, bytesHex, inputScripts, chainPaths );
+		CryptoCorp.SignTx( walletId, data, signTxCallback ) ;	
+	}
+
+	function signTxCallback( response ) {
+		// fail
+		if (response.result == "error") {
+			// error handling
+			alert( "Sign Transaction failed: " + response.thrownError );
+			return;
+		}
+		// deferred
+		if (response.result == "deferred") {
+			// state handling
+			var deferral = response.deferral ;
+			alert( "Sign Transaction deferred: " + deferral.reason );
+			return;
+		}
+		// success
+		alert( "Sign Transaction: signed: " + response.transaction );
+	}
 
     function txRebuild() {
+		var priv2 = $('#txSec2').val();
+		if( priv2 == 'undefined'  ||  priv2 == '' ) {
+			oracleTxSign();
+			return ;
+		}
+		
         var bytes = Crypto.util.hexToBytes($('#txRedemptionScript').val());
         var redemption_script = new Bitcoin.Script(bytes);
         var m = redemption_script.buffer[0] - Bitcoin.Opcode.map["OP_1"] + 1;
