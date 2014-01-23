@@ -9,7 +9,7 @@ var CryptoCorp = new function () {
 	
 	this.setOracleUrl = function( url ) {
 		host = url;
-	}
+	};
 	
 	//-----------------------
 	// Create Wallet
@@ -17,7 +17,7 @@ var CryptoCorp = new function () {
 	this.CreateWallet = function (walletId, data, callback) {
 		var url = getWalletUrl( walletId );
 		post( url, data, callback );
-	}
+	};
 	
 	//-----------------------
 	// Sign Tx
@@ -25,7 +25,7 @@ var CryptoCorp = new function () {
 	this.SignTx = function (walletId, data, callback) {
 		var url = getWalletTxUrl( walletId );
 		post( url, data, callback );
-	}
+	};
 	
 	// wallet url
 	function getWalletUrl(walletId) {
@@ -38,11 +38,7 @@ var CryptoCorp = new function () {
 	}
 	
 	// post
-	var postCallback;
-	
 	function post(url, data, callback) {
-		// will be invoked by local callback handlers
-		postCallback = callback;
 		// must 
 		var stringified = JSON.stringify( data );
 		// POST
@@ -52,37 +48,40 @@ var CryptoCorp = new function () {
 			url: url,
 			type: 'POST',
 			data: stringified,
-			success: successCallback,
-			error: errorCallback,
-			complete :  function (xhr){
+			success: function ( response ) {
+				successCallback( response, callback );
+			},
+			error: function( xhr, textStatus, errorThrown ) {
+				errorCallback( xhr, textStatus, errorThrown, callback );
+			},
+			complete : function (xhr){
 				return;
 			}
 		});
 	}
 	
-	
 	// post callback - success
-	function successCallback(data) {
+	function successCallback(data, callback) {
 		// if malformed data - invoke callback as error
 		if( data == null  ||  data == 'undefined'  ||  data.result == 'undefined' ) {
-			var response = { result: "error", thrownError: "No Data" };
+			var response = { result: "error", errorThrown: "No Data" };
 			postCallback( response );
 			return;
 		}
 		// invoke callback 
-		postCallback( data ) ;
+		callback( data ) ;
 	}
 	
 	// post callback - ERROR
-	function errorCallback(xhr, textStatus, thrownError) {
+	function errorCallback(xhr, textStatus, errorThrown, callback) {
 		console.log("xhr.status:" +xhr.status);
 		console.log("xhr.responseText:"+ xhr.responseText);
 		console.log("textStatus:"+ textStatus);
-		console.log("thrownError:" +thrownError);
+		console.log("errorThrown:" +errorThrown);
 		
 		// repackage results
-		var response = { result: "error", xhr: xhr, thrownError: thrownError };
-		postCallback( response );
+		var response = { result: "error", xhr: xhr, errorThrown: errorThrown };
+		callback( response );
 	}	
 	
 	this.getWalletData = function( rulesetId, keys, parameters, pii ) {
@@ -94,12 +93,12 @@ var CryptoCorp = new function () {
 			"pii": pii 
 		};
 		return data;
-	}
+	};
 	
 	this.getSignTxData = function( signatureIndex, bytes, inputScripts, chainPaths ) {
 		var data  = {"signatureIndex": signatureIndex, "transaction": {"bytes": bytes}, "inputScripts": inputScripts, "chainPaths": chainPaths};
 		return data;
-	}
+	};
 	
     function pad(str, len, ch) {
         padding = '';
@@ -151,7 +150,6 @@ var CryptoCorp = new function () {
 
         var redemption_script_str = Crypto.util.bytesToHex(redemption_script.buffer);
 		return redemption_script_str;
-    }
-	
+    };
 		
-}
+};
