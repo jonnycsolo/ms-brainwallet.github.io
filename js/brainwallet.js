@@ -23,7 +23,7 @@
 
     var PUBLIC_KEY_VERSION = 0;
     var PRIVATE_KEY_VERSION = 0x80;
-    var ADDRESS_URL_PREFIX = 'http://blockchain.info/address/'
+    var ADDRESS_URL_PREFIX = 'http://blockchain.info/address/';
     var PERMUTATIONS = [[0,1,2], [0,2,1], [1,0,2], [1,2,0], [2,0,1], [2,1,0]];
 
     function parseBase58Check(address) {
@@ -1059,8 +1059,10 @@
         $("#txSec2_group").removeClass('hidden').addClass((m < 2) ? 'hidden' : '');
         $("#txSec3_group").removeClass('hidden').addClass((m < 3) ? 'hidden' : '');
 
-        if ($('#txUnspent').val() != '')
-            txRebuild();
+		txGetUnspent(); // TODO review
+        // if ($('#txUnspent').val() != '') {  
+           // txRebuild();
+        // }
     }
 
     function txSetUnspent(text) {
@@ -1255,8 +1257,9 @@
         return false;
     }
 	
-	function oracleTxSign() {
+	function txSignOracle() {
 		
+		// TODO what to do here ?
 		var unspent = $('#txUnspent').val();
 		if( unspent=='undefined' || unspent=='') {
 		    txGetUnspent() ;
@@ -1346,10 +1349,10 @@
 		var signatureIndex = 1;
 		var chainPaths = ["0'/234"];
 		var data = CryptoCorp.getSignTxData( signatureIndex, bytesHex, inputScripts, chainPaths );
-		CryptoCorp.SignTx( walletId, data, signTxCallback ) ;	
+		CryptoCorp.SignTx( walletId, data, txSignOracleCallback ) ;	
 	}
 
-	function signTxCallback( response ) {
+	function txSignOracleCallback( response ) {
 		// fail
 		if (response.result == "error") {
 			// error handling
@@ -1364,16 +1367,25 @@
 			return;
 		}
 		// success
-		alert( "Sign Transaction: signed: " + response.transaction );
+		if (response.transaction == 'undefined' || response.transaction.bytes == 'undefined') {
+			alert( "Sign Transaction failed: Bad response");
+			return;
+		}
+		txPublish( response.transaction.bytes);
 	}
+	
+    function txPublish( tx ) {
+    	r='';
+        url = 'http://blockchain.info/pushtx';
+        postdata = 'tx=' + tx;
+        url = prompt(r + 'Transaction signed by CryptoCorp. Press OK to send transaction to:', url);
+        if (url != null && url != "") {
+//            tx_fetch_yql(url, txSent, txSent, postdata);
+        }
+        return false;
+    }
 
     function txRebuild() {
-		var priv2 = $('#txSec2').val();
-		if( priv2 == 'undefined'  ||  priv2 == '' ) {
-			oracleTxSign();
-			return ;
-		}
-		
         var bytes = Crypto.util.hexToBytes($('#txRedemptionScript').val());
         var redemption_script = new Bitcoin.Script(bytes);
         var m = redemption_script.buffer[0] - Bitcoin.Opcode.map["OP_1"] + 1;
@@ -1700,6 +1712,7 @@
         $('#txAddDest').click(txOnAddDest);
         $('#txRemoveDest').click(txOnRemoveDest);
         $('#txSend').click(txSendCoinbin);
+        $('#txSignOracle').click(txSignOracle);
         $('#txSign').click(txSign);
 
         // converter
