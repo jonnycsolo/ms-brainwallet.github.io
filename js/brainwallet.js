@@ -1271,7 +1271,7 @@
         var m = redemption_script.buffer[0] - Bitcoin.Opcode.map["OP_1"] + 1;
         var n = redemption_script.buffer[redemption_script.buffer.length-2] - Bitcoin.Opcode.map["OP_1"] + 1;
 		
-		m=1; //-ls
+		m = m-1; // oracle signs the last one
         var eckey1 = (m >= 1) ? txKey(1) : null;
 		
         var eckeys = new Array();
@@ -1324,31 +1324,21 @@
             theTx.addOutput(new Bitcoin.Address(addr), changeValue);
         }
 
-        try {
-            theTx.signWithMultiSigScript(eckeys, redemption_script.buffer);
-            var txJSON = TX.toBBE(theTx);
-            var buf = theTx.serialize();
-            var txHex = Crypto.util.bytesToHex(buf);
-            setErrorState($('#txJSON'), false, '');
-            $('#txJSON').val(txJSON);
-            $('#txHex').val(txHex);
-        } catch(err) {
-            if( ('' + err) == 'Version 5 not supported!' ) {
-                alert("The current version of BitcoinJS does not support spending to P2SH addresses yet.")
-            }
-            $('#txJSON').val('');
-            $('#txHex').val('');
-			return ;
-        }
+        theTx.signWithMultiSigScript(eckeys, redemption_script.buffer);
+        var txJSON = TX.toBBE(theTx);
+        var txBytes = theTx.serialize();
+        var txHex = Crypto.util.bytesToHex(txBytes);
+        setErrorState($('#txJSON'), false, '');
+        $('#txJSON').val(txJSON);
+        $('#txHex').val(txHex);
+
 		// go
-		var walletId = "xue574"; // ?		
-        var bytes = theTx.serialize();
-        var bytesHex = Crypto.util.bytesToHex(bytes);
+		var walletId = "xue574"; // ?
 		var inputScriptString = $("#txRedemptionScript").val();
 		var inputScripts = [ inputScriptString ];
 		var signatureIndex = 1;
 		var chainPaths = ["0'/234"];
-		var data = CryptoCorp.getSignTxData( signatureIndex, bytesHex, inputScripts, chainPaths );
+		var data = CryptoCorp.getSignTxData( signatureIndex, txHex, inputScripts, chainPaths );
 		CryptoCorp.SignTx( walletId, data, txSignOracleCallback ) ;	
 	}
 
@@ -1371,19 +1361,12 @@
 			alert( "Sign Transaction failed: Bad response");
 			return;
 		}
-		txPublish( response.transaction.bytes);
+		
+        $('#txHexHistory').val( $('#txHex').val() );
+        $('#txHexHistory_group').show();
+        $('#txHex').val( response.transaction.bytes );
+		txSendCoinbin();
 	}
-	
-    function txPublish( tx ) {
-    	r='';
-        url = 'http://blockchain.info/pushtx';
-        postdata = 'tx=' + tx;
-        url = prompt(r + 'Transaction signed by CryptoCorp. Press OK to send transaction to:', url);
-        if (url != null && url != "") {
-//            tx_fetch_yql(url, txSent, txSent, postdata);
-        }
-        return false;
-    }
 
     function txRebuild() {
         var bytes = Crypto.util.hexToBytes($('#txRedemptionScript').val());
@@ -1714,6 +1697,7 @@
         $('#txSend').click(txSendCoinbin);
         $('#txSignOracle').click(txSignOracle);
         $('#txSign').click(txSign);
+        $('#txHexHistory_group').hide();
 
         // converter
 
