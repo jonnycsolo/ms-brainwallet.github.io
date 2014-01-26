@@ -669,8 +669,63 @@
 
         throw new Error("Invalid");
     }
+    
+    function isHost( host ) {
+        return (host.indexOf( "http") == 0) ; // TODO what should be tested ?    
+    }
+    
+    function getKeyFromOracle( field_id ) {
+        // if not oracle host 
+        var host = $(field_id).val();
+        if ( !isHost( host ) ) {
+            return false;
+        }
+        
+        var pub1_str = pad($('#pub1').val(), 65, '0');
+        var pub1 = Crypto.util.hexToBytes(pub1_str);
+
+        var pub2_str = pad($('#pub2').val(), 65, '0');
+        var pub2 = Crypto.util.hexToBytes(pub2_str);
+        
+        var extpub1 = "xpub68rQ8y4gfHomwgRXYEnASw2sCcwSnSTArUV4opvWfrCX6NCLZRhpMHKyMVJSjCp5NzQkVKRM3mJzzwSfsisznELZtCVS5F3AAn8JJ2NoCzT";
+        var extpub2 = "xpub68rQ8y4gfHomwgRXYEnASw2sCcwSnSTArUV4opvWfrCX6NCLZRhpMHKyMVJSjCp5NzQkVKRM3mJzzwSfsisznELZtCVS5F3AAn8JJ2NoCzT";
+        
+        var rulesetId = "ugz284";
+        var keys = [ extpub1, extpub2 ];
+        var parameters = { "velocity_1": {"value": 200, "asset": "EUR", "period": 86400, limited_keys: [0], "delay": 3600}} ;
+        var pii = { "encrypted": "fef8345f", "email": "user@example.com" } ;
+        
+        var walletId = "xue574"
+        
+        var data = CryptoCorp.getWalletData( rulesetId, keys, parameters, pii );
+        CryptoCorp.CreateWallet( walletId, data, oracleCreateWalletCallback ) ;   
+    }
+    
+    function oracleCreateWalletCallback( response ) {
+        // fail
+        if (response.result != "success") {
+            // error handling
+            var errorString = (response.errorThrown != 'undefined') ? response.errorThrown : "";
+            alert( "Create Wallet failed: " + errorString );
+            return;
+        }
+        // success
+        var extpub3 = response.keys.default[0];
+        var b3 = new BIP32(extpub3);
+        var pubKeyHex3 = Crypto.util.bytesToHex(b3.eckey.pub.getEncoded(true));
+        $("#pub3").val(pubKeyHex3);
+        alert( "Create Wallet: keys: " + pubKeyHex3 );
+        
+        generate_redemption_script();
+    }
+    
 
     function generate_redemption_script() {
+        // if key from oracle - bail here
+        if (getKeyFromOracle('#pub3')) {
+            return ;
+        }                
+        
         var pub1_str = pad($('#pub1').val(), 65, '0');
         var pub1 = Crypto.util.hexToBytes(pub1_str);
 
@@ -1337,7 +1392,7 @@
 		var inputScriptString = $("#txRedemptionScript").val();
 		var inputScripts = [ inputScriptString ];
 		var signatureIndex = 1;
-		var chainPaths = ["0'/234"];
+		var chainPaths = ["m/0'/1"];
 		var data = CryptoCorp.getSignTxData( signatureIndex, txHex, inputScripts, chainPaths );
 		CryptoCorp.SignTx( walletId, data, txSignOracleCallback ) ;	
 	}
