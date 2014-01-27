@@ -20,6 +20,14 @@ var CryptoCorp = new function () {
 	};
 	
 	//-----------------------
+	// Create Wallet
+	//-----------------------
+	this.GetWallet = function (walletId, callback) {
+		var url = getWalletUrl( walletId );
+		get( url, callback );
+	};
+	
+	//-----------------------
 	// Sign Tx
 	//-----------------------
 	this.SignTx = function (walletId, data, callback) {
@@ -37,11 +45,26 @@ var CryptoCorp = new function () {
 		return getWalletUrl(walletId) + "/transactions";
 	}
 	
-	// post
+	function get(url, callback) {
+		$.ajax({
+			contentType: "application/json",
+			crossDomain: true,
+			url: url,
+			type: 'GET',
+			success: function ( response ) {
+				successCallback( response, callback );
+			},
+			error: function( xhr, textStatus, errorThrown ) {
+				errorCallback( xhr, textStatus, errorThrown, callback );
+			},
+			complete : function (xhr){
+				return;
+			}
+		});
+	}
+	
 	function post(url, data, callback) {
-		// must 
 		var stringified = JSON.stringify( data );
-		// POST
 		$.ajax({
 			contentType: "application/json",
 			crossDomain: true,
