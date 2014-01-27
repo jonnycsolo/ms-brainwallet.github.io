@@ -737,10 +737,10 @@
         var pub3 = Crypto.util.hexToBytes(pub3_str);
 
         // Sort the keys, then use the pubkey_order to create the permutation
-        var sorted_keys = permute_keys(sort_keys(pub1, pub2, pub3), pubkey_order);
-        pub1 = sorted_keys[0];
-        pub2 = sorted_keys[1];
-        pub3 = sorted_keys[2];
+        //var sorted_keys = permute_keys(sort_keys(pub1, pub2, pub3), pubkey_order);
+        //pub1 = sorted_keys[0];
+        //pub2 = sorted_keys[1];
+        //pub3 = sorted_keys[2];
 
         var pubkey1 = new Bitcoin.ECKey();
         pubkey1.pub = pub1;
