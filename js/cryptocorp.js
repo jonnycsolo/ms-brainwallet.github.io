@@ -22,9 +22,8 @@ var CryptoCorp = new function () {
 	//-----------------------
 	// Create Wallet
 	//-----------------------
-	this.GetWallet = function (walletId, callback) {
-		var url = getWalletUrl( walletId );
-		get( url, callback );
+	this.GetWallet = function (walletUrl, callback, payload) {
+		get( walletUrl, callback, payload );
 	};
 	
 	//-----------------------
@@ -45,17 +44,17 @@ var CryptoCorp = new function () {
 		return getWalletUrl(walletId) + "/transactions";
 	}
 	
-	function get(url, callback) {
+	function get(url, callback, payload) {
 		$.ajax({
 			contentType: "application/json",
 			crossDomain: true,
 			url: url,
 			type: 'GET',
 			success: function ( response ) {
-				successCallback( response, callback );
+				successCallback( response, callback, payload );
 			},
 			error: function( xhr, textStatus, errorThrown ) {
-				errorCallback( xhr, textStatus, errorThrown, callback );
+				errorCallback( xhr, textStatus, errorThrown, callback, payload );
 			},
 			complete : function (xhr){
 				return;
@@ -63,7 +62,7 @@ var CryptoCorp = new function () {
 		});
 	}
 	
-	function post(url, data, callback) {
+	function post(url, data, callback, payload) {
 		var stringified = JSON.stringify( data );
 		$.ajax({
 			contentType: "application/json",
@@ -72,10 +71,10 @@ var CryptoCorp = new function () {
 			type: 'POST',
 			data: stringified,
 			success: function ( response ) {
-				successCallback( response, callback );
+				successCallback( response, callback, payload );
 			},
 			error: function( xhr, textStatus, errorThrown ) {
-				errorCallback( xhr, textStatus, errorThrown, callback );
+				errorCallback( xhr, textStatus, errorThrown, callback, payload );
 			},
 			complete : function (xhr){
 				return;
@@ -84,7 +83,7 @@ var CryptoCorp = new function () {
 	}
 	
 	// post callback - success
-	function successCallback(data, callback) {
+	function successCallback(data, callback, payload) {
 		// if malformed data - invoke callback as error
 		if( data == null  ||  data == 'undefined'  ||  data.result == 'undefined' ) {
 			var response = { result: "error", errorThrown: "No Data" };
@@ -92,19 +91,22 @@ var CryptoCorp = new function () {
 			return;
 		}
 		// invoke callback 
-		callback( data ) ;
+		callback( data, payload ) ;
 	}
 	
 	// post callback - ERROR
-	function errorCallback(xhr, textStatus, errorThrown, callback) {
+	function errorCallback(xhr, textStatus, errorThrown, callback, payload) {
 		console.log("xhr.status:" +xhr.status);
 		console.log("xhr.responseText:"+ xhr.responseText);
 		console.log("textStatus:"+ textStatus);
 		console.log("errorThrown:" +errorThrown);
 		
 		// repackage results
+		if( xhr.readyState == 0 ) {
+		    errorThrown = "Timeout";
+		}
 		var response = { result: "error", xhr: xhr, errorThrown: errorThrown };
-		callback( response );
+		callback( response, payload );
 	}	
 	
 	this.getWalletData = function( rulesetId, keys, parameters, pii ) {

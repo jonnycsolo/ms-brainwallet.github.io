@@ -15,16 +15,16 @@ function onClickGenerate( event ) {
 	var extpub1 = $("#oracle_extpub1").val();
 	var extpub2 = $("#oracle_extpub2").val();
 	
-	var pubKeyHex1 = extpub2;
-        if (extpub1.match("^xpub")) {
-          var b1 = new BIP32(extpub1);
-          pubKeyHex1 = Crypto.util.bytesToHex(b1.eckey.pub.getEncoded(true));
-        }
+	var pubKeyHex1 = extpub1;
+    if (extpub1.match("^xpub")) {
+      var b1 = new BIP32(extpub1);
+      pubKeyHex1 = Crypto.util.bytesToHex(b1.eckey.pub.getEncoded(true));
+    }
 	var pubKeyHex2 = extpub2;
-        if (extpub2.match("^xpub")) {
-          var b2 = new BIP32(extpub2);
-          pubKeyHex2 = Crypto.util.bytesToHex(b2.eckey.pub.getEncoded(true));
-        }
+    if (extpub2.match("^xpub")) {
+      var b2 = new BIP32(extpub2);
+      pubKeyHex2 = Crypto.util.bytesToHex(b2.eckey.pub.getEncoded(true));
+    }
 	
 	$("#pub1").val(pubKeyHex1);
 	$("#pub2").val(pubKeyHex2);
