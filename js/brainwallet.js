@@ -671,7 +671,8 @@
     }
     
     function isHost( host ) {
-        return (host.indexOf( "http") == 0) ; // TODO what should be tested ?    
+        // TODO - elimiate multiple hits on partial URL
+        return (host.indexOf( "http") == 0) ;
     }
     
     function getKeyFromOracle( field_id ) {
@@ -1114,7 +1115,7 @@
         $("#txSec2_group").removeClass('hidden').addClass((m < 2) ? 'hidden' : '');
         $("#txSec3_group").removeClass('hidden').addClass((m < 3) ? 'hidden' : '');
 
-		txGetUnspent(); // TODO review @miron
+		txGetUnspent();
     }
 
     function txSetUnspent(text) {
@@ -1308,38 +1309,44 @@
         }
         return false;
     }
-	
 
-    function txRebuild_oracle() {
+    function txRebuild() {
         var bytes = Crypto.util.hexToBytes($('#txRedemptionScript').val());
         var redemption_script = new Bitcoin.Script(bytes);
         var m = redemption_script.buffer[0] - Bitcoin.Opcode.map["OP_1"] + 1;
         var n = redemption_script.buffer[redemption_script.buffer.length-2] - Bitcoin.Opcode.map["OP_1"] + 1;
+
+        // true if one of the keys is an oracle url        
+        var isOracle = false;
         
-        // if last key is oracle url 
-        var lastKey = $('#txSec' + m).val();
-        var isOracle = isHost( lastKey ) ;
-        if( isOracle ) {
-            m = m-1; // keep going and sign a partial
-        }
-        
-        var eckeyI = [ null, null, null ] ;
+        var eckeyI = new Array();
         for( var i=0; i<m ; i++) {
+            // check for oracle url
+            var keyString=$( '#txSec'+(i+1) ).val();
+            if( isHost(keyString) ) {
+                isOracle = true;
+                continue;
+            }
+            // check for valid key
             var key = txKey(i+1) ;
             if (key == null) {
                 $('#txJSON').val('');
                 $('#txHex').val('');
                 return;
             }
-            eckeyI[ i ] = key ;
+            eckeyI.push( key );
+        }
+        // oracle 
+        if( isOracle ) {
+            m = m-1; // keep going and sign a partial
         }
         
         var eckeys = new Array();
         // Need to determine the order of the keys in the redemption script.
         // And build 'eckeys' in an order that matches
-        var pubkeys = [ null, null, null ];
+        var pubkeys = new Array();
         for( i=0; i<n ; i++ ) {
-            pubkeys[i] = redemption_script.chunks[ i+1 ]; 
+            pubkeys.push( redemption_script.chunks[ i+1 ] ); 
         }
         
         for( var j = 0; j < m; j++ ) {
@@ -1398,16 +1405,21 @@
         $('#txHex').val(txHex);   
         
         if( isOracle ) {
+            // clear the fields to avoid confusion
+            $('#txHexHistory').val( $('#txHex').val() );
+            $('#txJSON').val("");
+            $('#txHex').val("");
+            // send to the oracle for partial 
             oracleSignPartial( txHex ) ;
         }
     }
     
     function oracleSignPartial( txHex ) {
-        var walletId = "xue574"; // ?
+        var walletId = "xue574"; // TODO value ?
         var inputScriptString = $("#txRedemptionScript").val();
         var inputScripts = [ inputScriptString ];
         var signatureIndex = 1;
-        var chainPaths = ["m/0'/1"];
+        var chainPaths = [""];
         var data = CryptoCorp.getSignTxData( signatureIndex, txHex, inputScripts, chainPaths );
         CryptoCorp.SignTx( walletId, data, oracleSignPartialCallback ) ; 
     }
@@ -1421,7 +1433,7 @@
         }
         // deferred
         if (response.result == "deferred") {
-            // TODO state handling @miron
+            // TODO state handling
             var deferral = response.deferral ;
             alert( "Sign Transaction deferred: " + deferral.reason );
             return;
@@ -1432,189 +1444,11 @@
             return;
         }
         // sucess 
-        $('#txHexHistory').val( $('#txHex').val() );
-        $('#txHexHistory_group').show();
-        $('#txHex').val( response.transaction.bytes );
-        
-        // TODO - do anything ?
-    }
-    	
-
-    function txRebuild_refactored() {
-        var bytes = Crypto.util.hexToBytes($('#txRedemptionScript').val());
-        var redemption_script = new Bitcoin.Script(bytes);
-        var m = redemption_script.buffer[0] - Bitcoin.Opcode.map["OP_1"] + 1;
-        var n = redemption_script.buffer[redemption_script.buffer.length-2] - Bitcoin.Opcode.map["OP_1"] + 1;
-        
-        var eckeyI = [ null, null, null ] ;
-        for( var i=0; i<m ; i++) {
-            var key = txKey(i+1) ;
-            if (key == null) {
-                $('#txJSON').val('');
-                $('#txHex').val('');
-                return;
-            }
-            eckeyI[ i ] = key ;
-        }
-        
-        var eckeys = new Array();
-        // Need to determine the order of the keys in the redemption script.
-        // And build 'eckeys' in an order that matches
-        var pubkeys = [ null, null, null ];
-        for( i=0; i<n ; i++ ) {
-            pubkeys[i] = redemption_script.chunks[ i+1 ]; 
-        }
-        
-        for( var j = 0; j < m; j++ ) {
-            if( pubkeys[j] === null ) continue;
-
-            if( m >= 1 && pubkey_matches_privkey(pubkeys[j], eckeyI[0]) ) eckeys.push(eckeyI[0]);
-            else if( m >= 2 && pubkey_matches_privkey(pubkeys[j], eckeyI[1]) ) eckeys.push(eckeyI[1]);
-            else if( m >= 3 && pubkey_matches_privkey(pubkeys[j], eckeyI[2]) ) eckeys.push(eckeyI[2]);
-        }
-        
-        for( var i=0 ; i<m ; i++ ) {
-            var key = eckeyI[i].getPubPoint().getEncoded(false) ;
-            if ( !array_has_object(eckeys, eckeyI[i]) ) 
-                setErrorState($( '#txSec'+(i+1) ), true, 'Key is not valid for redemption script');
-            else
-                setErrorState($('#txSec' +(i+1) ), false, '');
-        }
-        
-        if( eckeys.length < m ) {
-            $('#txJSON').val('');
-            $('#txHex').val('');
-            return;
-        }
-        
-        var addr = $('#txAddr').val();
-        var unspent = $('#txUnspent').val();
-        var fee = parseFloat('0'+$('#txFee').val());
-
-        parseInputs(unspent, addr);
-
-        theTx.clearOutputs();
-        
-        var fval = 0;
-        var o = txGetOutputs();
-        for (var i = 0 ; i < o.length ; i++) {
-            if (o[i].dest != "") {
-                fval += o[i].fval;
-                var value = new BigInteger('' + Math.round(o[0].fval * 1e8), 10);
-                theTx.addOutput(new Bitcoin.Address(o[0].dest), value);
-            }
-        }
-        
-        // send change back or it will be sent as fee
-        var change = Bitcoin.Util.formatValue(balance) - fval - fee;
-        var changeValue = new BigInteger('' + Math.round(change * 1e8), 10);
-        if (changeValue > 0) {
-            theTx.addOutput(new Bitcoin.Address(addr), changeValue);
-        }
-
-        theTx.signWithMultiSigScript(eckeys, redemption_script.buffer);
-        var txJSON = TX.toBBE(theTx);
-        var buf = theTx.serialize();
-        var txHex = Crypto.util.bytesToHex(buf);
-        setErrorState($('#txJSON'), false, '');
-        $('#txJSON').val(txJSON);
-        $('#txHex').val(txHex);        
+        $('#txHexHistory_group').show(); // the partial tx is shown
+        $('#txHex').val( response.transaction.bytes ); // the full tx here
+        $('#txJSON').val( "Signed" );
     }
     
-    function txRebuild() {
-        txRebuild_oracle() ;
-        return ;
-        
-        var bytes = Crypto.util.hexToBytes($('#txRedemptionScript').val());
-        var redemption_script = new Bitcoin.Script(bytes);
-        var m = redemption_script.buffer[0] - Bitcoin.Opcode.map["OP_1"] + 1;
-        var n = redemption_script.buffer[redemption_script.buffer.length-2] - Bitcoin.Opcode.map["OP_1"] + 1;
-
-        var eckey1 = (m >= 1) ? txKey(1) : null;
-        var eckey2 = (m >= 2) ? txKey(2) : null;
-        var eckey3 = (m >= 3) ? txKey(3) : null;
-
-        if( (m >= 3 && (eckey3 == null || eckey2 == null || eckey1 == null))
-           || (m >= 2 && (eckey2 == null || eckey1 == null))
-           || (m >= 1 && (eckey1 == null)) ) {
-            $('#txJSON').val('');
-            $('#txHex').val('');
-            return;
-        }
-
-        var eckeys = new Array();
-
-        // Need to determine the order of the keys in the redemption script.
-        // And build 'eckeys' in an order that matches
-        var pubkey1 = (n >= 1) ? redemption_script.chunks[1] : null;
-        var pubkey2 = (n >= 2) ? redemption_script.chunks[2] : null;
-        var pubkey3 = (n >= 3) ? redemption_script.chunks[3] : null;
-        var pubkeys = [pubkey1, pubkey2, pubkey3];
-
-        for( var j = 0; j < pubkeys.length; j++ ) {
-            if( pubkeys[j] === null ) continue;
-
-            if( m >= 1 && pubkey_matches_privkey(pubkeys[j], eckey1) ) eckeys.push(eckey1);
-            else if( m >= 2 && pubkey_matches_privkey(pubkeys[j], eckey2) ) eckeys.push(eckey2);
-            else if( m >= 3 && pubkey_matches_privkey(pubkeys[j], eckey3) ) eckeys.push(eckey3);
-        }
-
-
-        if( m >= 1 && !array_has_object(eckeys, eckey1) ) setErrorState($('#txSec1'), true, 'Key is not valid for redemption script');
-        else                                              setErrorState($('#txSec1'), false, '');
-        if( m >= 2 && !array_has_object(eckeys, eckey2) ) setErrorState($('#txSec2'), true, 'Key is not valid for redemption script');
-        else                                              setErrorState($('#txSec2'), false, '');
-        if( m >= 3 && !array_has_object(eckeys, eckey3) ) setErrorState($('#txSec3'), true, 'Key is not valid for redemption script');
-        else                                              setErrorState($('#txSec3'), false, '');
-
-        if( eckeys.length < m ) {
-            $('#txJSON').val('');
-            $('#txHex').val('');
-            return;
-        }
-
-        var addr = $('#txAddr').val();
-        var unspent = $('#txUnspent').val();
-        var fee = parseFloat('0'+$('#txFee').val());
-
-        parseInputs(unspent, addr);
-
-        theTx.clearOutputs();
-
-        var fval = 0;
-        var o = txGetOutputs();
-        for (var i = 0 ; i < o.length ; i++) {
-            if (o[i].dest != "") {
-                fval += o[i].fval;
-                var value = new BigInteger('' + Math.round(o[0].fval * 1e8), 10);
-                theTx.addOutput(new Bitcoin.Address(o[0].dest), value);
-            }
-        }
-
-        // send change back or it will be sent as fee
-        var change = Bitcoin.Util.formatValue(balance) - fval - fee;
-        var changeValue = new BigInteger('' + Math.round(change * 1e8), 10);
-        if (changeValue > 0) {
-            theTx.addOutput(new Bitcoin.Address(addr), changeValue);
-        }
-
-        try {
-            theTx.signWithMultiSigScript(eckeys, redemption_script.buffer);
-            var txJSON = TX.toBBE(theTx);
-            var buf = theTx.serialize();
-            var txHex = Crypto.util.bytesToHex(buf);
-            setErrorState($('#txJSON'), false, '');
-            $('#txJSON').val(txJSON);
-            $('#txHex').val(txHex);
-        } catch(err) {
-            if( ('' + err) == 'Version 5 not supported!' ) {
-                alert("The current version of BitcoinJS does not support spending to P2SH addresses yet.")
-            }
-            $('#txJSON').val('');
-            $('#txHex').val('');
-        }
-    }
-
     function parseInputs(unspent, addr) {
         theTx.clearInputs();
         var inputs;
@@ -1851,7 +1685,6 @@
         $('#txAddDest').click(txOnAddDest);
         $('#txRemoveDest').click(txOnRemoveDest);
         $('#txSend').click(txSendCoinbin);
-        $('#txSignOracle').click(txSignOracle);
         $('#txSign').click(txSign);
         $('#txHexHistory_group').hide();
 
