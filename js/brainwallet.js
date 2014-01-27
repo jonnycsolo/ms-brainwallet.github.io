@@ -709,8 +709,10 @@
 
     function generate_redemption_script() {
         // if key from oracle - bail here
-        if (oracleGetWallet('#pub3')) { // TODO generalize
-            return ;
+        for( var i = 1 ; i <= 3 ; i++ ) {
+            if (oracleGetWallet('#pub'+i)) {
+                return;
+            }
         }                
         
         var pub1_str = pad($('#pub1').val(), 65, '0');
