@@ -1306,12 +1306,13 @@
 
         // true if one of the keys is an oracle url        
         var isOracle = false;
+        var walletUrl; // TODO supports only 1 oracle
         
         var eckeyI = new Array();
         for( var i=0; i<m ; i++) {
             // check for oracle url
-            var keyString=$( '#txSec'+(i+1) ).val();
-            if( isHost(keyString) ) {
+            walletUrl=$( '#txSec'+(i+1) ).val();
+            if( isHost(walletUrl) ) {
                 isOracle = true;
                 continue;
             }
@@ -1398,18 +1399,17 @@
             $('#txJSON').val("");
             $('#txHex').val("");
             // send to the oracle for partial 
-            oracleSignPartial( txHex ) ;
+            oracleSignPartial( txHex, walletUrl ) ;
         }
     }
     
-    function oracleSignPartial( txHex ) {
-        var walletId = "xue574"; // TODO value ?
+    function oracleSignPartial( txHex, walletUrl ) {
         var inputScriptString = $("#txRedemptionScript").val();
         var inputScripts = [ inputScriptString ];
         var signatureIndex = 1;
         var chainPaths = [""];
         var data = CryptoCorp.getSignTxData( signatureIndex, txHex, inputScripts, chainPaths );
-        CryptoCorp.SignTx( walletId, data, oracleSignPartialCallback ) ; 
+        CryptoCorp.SignTx( walletUrl, data, oracleSignPartialCallback ) ; 
     }
     
     function oracleSignPartialCallback( response ) {

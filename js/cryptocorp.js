@@ -29,8 +29,8 @@ var CryptoCorp = new function () {
 	//-----------------------
 	// Sign Tx
 	//-----------------------
-	this.SignTx = function (walletId, data, callback) {
-		var url = getWalletTxUrl( walletId );
+	this.SignTx = function (walletUrl, data, callback) {
+	    url = getWalletTxUrl(walletUrl)
 		post( url, data, callback );
 	};
 	
@@ -40,8 +40,8 @@ var CryptoCorp = new function () {
 	}
 	
 	// wallet url
-	function getWalletTxUrl(walletId) {
-		return getWalletUrl(walletId) + "/transactions";
+	function getWalletTxUrl(walletUrl) {
+		return walletUrl + "/transactions";
 	}
 	
 	function get(url, callback, payload) {
@@ -121,7 +121,7 @@ var CryptoCorp = new function () {
 	};
 	
 	this.getSignTxData = function( signatureIndex, bytes, inputScripts, chainPaths ) {
-		var data  = {"signatureIndex": signatureIndex, "transaction": {"bytes": bytes}, "inputScripts": inputScripts, "chainPaths": chainPaths};
+		var data  = {"signatureIndex": signatureIndex, "transaction": {"bytes": bytes, "inputScripts": inputScripts}, "chainPaths": chainPaths};
 		return data;
 	};
 	
