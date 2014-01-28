@@ -8,40 +8,40 @@ var CryptoCorp = new function () {
 	var host = "http://btc2.hyper.to";
 	
 	this.setOracleUrl = function( url ) {
-		host = url;
+		host = url.trim();
 	};
 	
 	//-----------------------
 	// Create Wallet
 	//-----------------------
 	this.CreateWallet = function (walletId, data, callback) {
-		var url = getWalletUrl( walletId );
+		var url = getWalletUrl( walletId.trim() );
 		post( url, data, callback );
 	};
 	
 	//-----------------------
-	// Create Wallet
+	// Get Wallet
 	//-----------------------
 	this.GetWallet = function (walletUrl, callback, payload) {
-		get( walletUrl, callback, payload );
+		get( walletUrl.trim(), callback, payload );
 	};
 	
 	//-----------------------
 	// Sign Tx
 	//-----------------------
 	this.SignTx = function (walletUrl, data, callback) {
-	    url = getWalletTxUrl(walletUrl)
+	    url = getWalletTxUrl( walletUrl.trim() )
 		post( url, data, callback );
 	};
 	
 	// wallet url
 	function getWalletUrl(walletId) {
-		return host + "/wallets/" + walletId;
+		return host + "/wallets/" + walletId.trim();
 	}
 	
 	// wallet url
 	function getWalletTxUrl(walletUrl) {
-		return walletUrl + "/transactions";
+		return walletUrl.trim() + "/transactions";
 	}
 	
 	function get(url, callback, payload) {
@@ -135,13 +135,13 @@ var CryptoCorp = new function () {
 	
     this.generate_redemption_script = function( pub1_str, pub2_str, pub3_str ) {
 		
-        pub1_str = pad( pub1_str, 65, '0' );
+        pub1_str = pad( pub1_str.trim(), 65, '0' );
         var pub1 = Crypto.util.hexToBytes(pub1_str);
 
-        pub2_str = pad( pub2_str, 65, '0' );
+        pub2_str = pad( pub2_str.trim(), 65, '0' );
         var pub2 = Crypto.util.hexToBytes(pub2_str);
 
-        pub3_str = pad( pub3_str, 65, '0' );
+        pub3_str = pad( pub3_str.trim(), 65, '0' );
         var pub3 = Crypto.util.hexToBytes(pub3_str);
 
         var pubkey1 = new Bitcoin.ECKey();

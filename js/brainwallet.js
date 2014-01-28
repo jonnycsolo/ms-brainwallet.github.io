@@ -217,7 +217,7 @@
     function get_extended_key_set(k1, k2, k3) {
         var key1;
         try {
-            var key1_str = $(k1).val();
+            var key1_str = $(k1).val().trim();
             key1 = new BIP32(key1_str);
         } catch(err) {
             key1 = null;
@@ -225,7 +225,7 @@
 
         var key2;
         try {
-            var key2_str = $(k2).val();
+            var key2_str = $(k2).val().trim();
             key2 = new BIP32(key2_str);
         } catch(err) {
             key2 = null;
@@ -233,7 +233,7 @@
 
         var key3;
         try {
-            var key3_str = $(k3).val();
+            var key3_str = $(k3).val().trim();
             key3 = new BIP32(key3_str);
         } catch(err) {
             key3 = null;
@@ -677,7 +677,7 @@
     
     function oracleGetWallet( field_id ) {
         // if not oracle host 
-        var walletUrl = $(field_id).val();
+        var walletUrl = $(field_id).val().trim();
         if ( !isHost( walletUrl ) ) {
             return false;
         }
@@ -715,13 +715,13 @@
             }
         }                
         
-        var pub1_str = pad($('#pub1').val(), 65, '0');
+        var pub1_str = pad($('#pub1').val().trim(), 65, '0');
         var pub1 = Crypto.util.hexToBytes(pub1_str);
 
-        var pub2_str = pad($('#pub2').val(), 65, '0');
+        var pub2_str = pad($('#pub2').val().trim(), 65, '0');
         var pub2 = Crypto.util.hexToBytes(pub2_str);
 
-        var pub3_str = pad($('#pub3').val(), 65, '0');
+        var pub3_str = pad($('#pub3').val().trim(), 65, '0');
         var pub3 = Crypto.util.hexToBytes(pub3_str);
 
         // Sort the keys, then use the pubkey_order to create the permutation
@@ -1258,7 +1258,7 @@
     }
 
     function txKey(i) {
-        var sec = $('#txSec' + i).val();
+        var sec = $('#txSec' + i).val().trim();
         try {
             var res = parseBase58Check(sec); 
             var version = res[0];
