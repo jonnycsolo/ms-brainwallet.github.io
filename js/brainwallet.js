@@ -675,6 +675,52 @@
         return (host.indexOf( "http") == 0) ;
     }
     
+    function oracleCreateWallet( event ) {
+  
+      var walletId = $("#wallet_id").val().trim();
+      var rulesetId = $("#ruleset_id").val().trim();
+      var value = $("#velocity_value").val();
+      var asset =  $("#velocity_asset").val();
+      var period = $("#velocity_period").val()*60*60;
+      var delay = $("#delay_period").val()*60*60;
+      
+      var parameters = CryptoCorp.getParameters( value, asset, period, delay );
+      
+      var email = $("#pii_email").val().trim();
+      var first = $("#pii_first").val().trim();
+      var last = $("#pii_last").val().trim();
+      var phone = $("#pii_phone").val().trim();
+      var pii = CryptoCorp.getPii( email, first, last, phone );
+    
+      var limited_keys = new Array();
+      for( var i = 1 ; i <= 2 ; i++ ) {
+        var key = $("#limited_key"+i).val();
+        if( key.trim().match("^xpub") ) {
+          limited_keys.push( key );
+        }
+      }
+      
+      var url = $('#oracle_url').val();
+      CryptoCorp.setOracleUrl( url ) ;
+    
+      // CryptoCorp
+      var data = CryptoCorp.getWalletData( rulesetId, limited_keys, parameters, pii );
+      CryptoCorp.CreateWallet( walletId, data, oracleCreateWalletCallback ); 
+      $('#wallet_key').val( "Oracle consult in progress..." );
+    }
+    
+    function oracleCreateWalletCallback( response ) {
+      if (response.result != "success") {
+        var errorString = (response.errorThrown != 'undefined') ? response.errorThrown : "";
+        alert( "Wallet Creation Error: " + errorString );
+        return;
+      }
+      // success
+      var keys = response.keys;
+      alert( "Wallet Created" );
+      $('#wallet_key').val( keys.default[0] );
+    }
+    
     function oracleGetWallet( field_id ) {
         // if not oracle host 
         var walletUrl = $(field_id).val().trim();
@@ -1633,6 +1679,9 @@
 
         $("#pubkey_order_prev").on('click', pubkey_order_prev );
         $("#pubkey_order_next").on('click', pubkey_order_next );
+        
+        // oracle
+        $("#oracle_create_wallet_button").click( oracleCreateWallet );
 
         //initializePublicKeys();
         reqUpdateLabel();

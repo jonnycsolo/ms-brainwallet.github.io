@@ -39,6 +39,7 @@
               <a data-toggle="tab" href="#generator">Create</a></li>
             <li><a data-toggle="tab" href="#tx" id="tab-tx">Spend</a></li>
             <li><a data-toggle="tab" href="#converter" id="tab-converter">Converter</a></li>
+            <li><a data-toggle="tab" href="#oracle" id="tab-oracle">Oracle</a></li>
           </ul>
           <ul class="nav navbar-nav navbar-right">
             <li class="dropdown" id="crCurrency">
@@ -464,6 +465,173 @@
             </fieldset>
           </form>
         </div>
+        <!-- Oracle -->
+        <div class="tab-pane fade" id="oracle">
+          <form action="/" class="form-horizontal" method="get">
+            <fieldset>
+              <legend>Oracle</legend>
+              
+              <div class="form-group" id="oracle_group">
+                <label class="col-lg-2 control-label" for="oracle_url">Oracle (URL) DEBUG</label>
+                <div class="col-lg-10 controls">
+                  <div class="input-append">
+                    <input class="form-control" id="oracle_url" type="text" value="http://btc2.hyper.to" />
+                  </div>
+                </div>
+              </div>
+              <hr>
+              <div class="form-group" id="wallet_id_group">
+                <label class="col-lg-2 control-label" for="wallet_id">Wallet ID</label>
+                <div class="col-lg-10 controls">
+                  <div class="input-append">
+                    <input class="form-control" id="wallet_id" type="text" value="qwe123" />
+                  </div>
+                </div>
+              </div>
+              <hr>
+              
+              <div class="form-group">
+                <label class="col-lg-2" >Personal Information</label>
+              </div>
+              <div class="form-group" id="pii_email_group">
+                <label class="col-lg-2 control-label" for="pii_email">Email</label>
+                <div class="col-lg-10 controls">
+                  <div class="input-append">
+                    <input class="form-control" id="pii_email" type="text" value="email@email.em" />
+                  </div>
+                </div>
+              </div>
+              <div class="form-group" id="pii_first_group">
+                <label class="col-lg-2 control-label" for="pii_first">First</label>
+                <div class="col-lg-10 controls">
+                  <div class="input-append">
+                    <input class="form-control" id="pii_first" type="text" value="First" />
+                  </div>
+                </div>
+              </div>
+              <div class="form-group" id="pii_last_group">
+                <label class="col-lg-2 control-label" for="pii_last">Last</label>
+                <div class="col-lg-10 controls">
+                  <div class="input-append">
+                    <input class="form-control" id="pii_last" type="text" value="Last" />
+                  </div>
+                </div>
+              </div>
+              <div class="form-group" id="pii_phone_group">
+                <label class="col-lg-2 control-label" for="pii_phone">Phone</label>
+                <div class="col-lg-10 controls">
+                  <div class="input-append">
+                    <input class="form-control" id="pii_phone" type="text" value="+1 415-415-4155" />
+                  </div>
+                </div>
+              </div>
+              <hr>
+              
+              <div class="form-group">
+                <label class="col-lg-2" >Limited Keys</label>
+              </div>
+              <div class="form-group" id="limited_key1_group">
+                <label class="col-lg-2 control-label" for="limited_key1">#1</label>
+                <div class="col-lg-10 controls">
+                  <div class="input-append">
+                    <input class="form-control" id="limited_key1" type="text" value="xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH" />
+                  </div>
+                </div>
+              </div>
+              <div class="form-group" id="limited_key2_group">
+                <label class="col-lg-2 control-label" for="limited_key2">#2</label>
+                <div class="col-lg-10 controls">
+                  <div class="input-append">
+                    <input class="form-control" id="limited_key2" type="text" value="" />
+                  </div>
+                </div>
+              </div>
+              
+              <hr>
+              <div class="form-group">
+                <label class="col-lg-2" >Rule Set</label>
+              </div>
+              <div class="form-group" id="ruleset_id_group">
+                <label class="col-lg-2 control-label" for="ruleset_id">ID</label>
+                <div class="col-lg-10 controls">
+                  <div class="input-append">
+                    <input class="form-control" id="ruleset_id" type="text" value="Bzbz24" />
+                  </div>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-lg-2" >Velocity</label>
+              </div>
+              <div class="form-group" id="velocity_value_group">
+                <label class="col-lg-2 control-label" for="velocity_value">Value</label>
+                <div class="col-lg-10 controls">
+                  <div class="input-append">
+                    <input class="form-control" id="velocity_value" type="number" value="200" />
+                  </div>
+                </div>
+              </div>
+              <div class="form-group" id="velocity_asset_group">
+                <label class="col-lg-2 control-label" for="velocity_asset">Asset</label>
+                <div class="col-lg-10 controls">
+                  <div class="input-append">
+                    <select class="form-control" id="velocity_asset">
+                      <option value="USD">USD</option>
+                      <option value="EUR">EUR</option>
+                      <option value="CAD">CAD</option>
+                      <option value="GBP">GBP</option>
+                    </select>              
+                  </div>
+                </div>
+              </div>
+              <div class="form-group" id="velocity_period_group">
+                <label class="col-lg-2 control-label" for="velocity_period">Period</label>
+                <div class="col-lg-10 controls">
+                  <div class="input-append">
+                    <select class="form-control" id="velocity_period">
+                      <option value="24">24 Hours</option>
+                      <option value="12">12 Hours</option>
+                      <option value="6">6 Hours</option>
+                    </select>              
+                  </div>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label class="col-lg-2" >Delay</label>
+              </div>
+              <div class="form-group" id="delay_period_group">
+                <label class="col-lg-2 control-label" for="delay_period">Period</label>
+                <div class="col-lg-10 controls">
+                  <div class="input-append">
+                    <select class="form-control" id="delay_period">
+                      <option value="1">1 Hour</option>
+                      <option value="2">2 Hours</option>
+                      <option value="4">4 Hours</option>
+                    </select>              
+                  </div>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="col-lg-offset-2 col-lg-10 controls">
+                  <div class="input-group">
+                    <button class="btn btn-default" id="oracle_create_wallet_button" title="title" type="button">Create Wallet</button>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="form-group" id="wallet_key_group">
+                <label class="col-lg-2 control-label" for="wallet_key">Wallet Key</label>
+                <div class="col-lg-10 controls">
+                  <div class="input-append">
+                    <input class="form-control" id="wallet_key" type="text" value="" readonly="true"/>
+                  </div>
+                </div>
+              </div>
+
+            </fieldset>
+          </form>
+        </div>        
+        
         <hr />
         <footer>
           <p>

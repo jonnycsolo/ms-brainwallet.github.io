@@ -120,6 +120,19 @@ var CryptoCorp = new function () {
 		return data;
 	};
 	
+  this.getParameters = function( value, asset, period, delay ) {
+    var parameters = { 
+      "velocity_1": { "value": value, "asset": asset, "period": period, "delay": delay }
+    };
+    return parameters;
+  }
+    
+  this.getPii = function( email, first, last, phone ) {
+    var enc = "fef8345f";
+    var pii = { "email": email, "encrypted": enc };
+    return pii;
+  }
+	
 	this.getSignTxData = function( signatureIndex, bytes, inputScripts, chainPaths ) {
 		var data  = {"signatureIndex": signatureIndex, "transaction": {"bytes": bytes, "inputScripts": inputScripts}, "chainPaths": chainPaths};
 		return data;
@@ -176,5 +189,5 @@ var CryptoCorp = new function () {
         var redemption_script_str = Crypto.util.bytesToHex(redemption_script.buffer);
 		return redemption_script_str;
     };
-		
+
 };
