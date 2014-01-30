@@ -480,15 +480,6 @@
                 </div>
               </div>
               <hr>
-              <div class="form-group" id="wallet_id_group">
-                <label class="col-lg-2 control-label" for="wallet_id">Wallet ID</label>
-                <div class="col-lg-10 controls">
-                  <div class="input-append">
-                    <input class="form-control" id="wallet_id" type="text" value="qwe123" />
-                  </div>
-                </div>
-              </div>
-              <hr>
               
               <div class="form-group">
                 <label class="col-lg-2" >Personal Information</label>
@@ -527,22 +518,11 @@
               </div>
               <hr>
               
-              <div class="form-group">
-                <label class="col-lg-2" >Limited Keys</label>
-              </div>
-              <div class="form-group" id="limited_key1_group">
-                <label class="col-lg-2 control-label" for="limited_key1">#1</label>
+              <div class="form-group" id="wallet_user_key_group">
+                <label class="col-lg-2 control-label" for="wallet_user_key">User Key</label>
                 <div class="col-lg-10 controls">
                   <div class="input-append">
-                    <input class="form-control" id="limited_key1" type="text" value="xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH" />
-                  </div>
-                </div>
-              </div>
-              <div class="form-group" id="limited_key2_group">
-                <label class="col-lg-2 control-label" for="limited_key2">#2</label>
-                <div class="col-lg-10 controls">
-                  <div class="input-append">
-                    <input class="form-control" id="limited_key2" type="text" value="" />
+                    <input class="form-control" id="wallet_user_key" type="text" value="xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH" />
                   </div>
                 </div>
               </div>
@@ -575,10 +555,7 @@
                 <div class="col-lg-10 controls">
                   <div class="input-append">
                     <select class="form-control" id="velocity_asset">
-                      <option value="USD">USD</option>
-                      <option value="EUR">EUR</option>
-                      <option value="CAD">CAD</option>
-                      <option value="GBP">GBP</option>
+                      <option value="BTC">BTC</option>
                     </select>              
                   </div>
                 </div>
@@ -588,10 +565,12 @@
                 <div class="col-lg-10 controls">
                   <div class="input-append">
                     <select class="form-control" id="velocity_period">
-                      <option value="24">24 Hours</option>
-                      <option value="12">12 Hours</option>
-                      <option value="6">6 Hours</option>
-                    </select>              
+                      <option value="86400">24 Hours</option>
+                      <option value="43200">12 Hours</option>
+                      <option value="21600">6 Hours</option>
+                      <option value="300">5 Minutes</option>
+                      <option value="60">1 Minute</option>
+                    </select>
                   </div>
                 </div>
               </div>
@@ -604,10 +583,11 @@
                 <div class="col-lg-10 controls">
                   <div class="input-append">
                     <select class="form-control" id="delay_period">
-                      <option value="1">1 Hour</option>
-                      <option value="2">2 Hours</option>
-                      <option value="4">4 Hours</option>
-                    </select>              
+                      <option value="3600">1 Hour</option>
+                      <option value="7200">2 Hours</option>
+                      <option value="60">1 Minute</option>
+                      <option value="120">2 Minute</option>
+                    </select>
                   </div>
                 </div>
               </div>
@@ -619,6 +599,14 @@
                 </div>
               </div>
               
+              <div class="form-group" id="wallet_id_group">
+                <label class="col-lg-2 control-label" for="wallet_id">Wallet ID</label>
+                <div class="col-lg-10 controls">
+                  <div class="input-append">
+                    <input class="form-control" id="wallet_id" type="text" value="" readonly="true"/>
+                  </div>
+                </div>
+              </div>
               <div class="form-group" id="wallet_key_group">
                 <label class="col-lg-2 control-label" for="wallet_key">Wallet Key</label>
                 <div class="col-lg-10 controls">

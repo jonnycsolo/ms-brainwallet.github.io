@@ -6,7 +6,8 @@ var CryptoCorp = new function () {
 	
 	// configurables
 	var host = "http://btc2.hyper.to";
-	
+  var KeyIndex = Object.freeze( { USER:0, BACKUP:1, ORACLE:2 } );
+   	
 	this.setOracleUrl = function( url ) {
 		host = url.trim();
 	};
@@ -14,9 +15,10 @@ var CryptoCorp = new function () {
 	//-----------------------
 	// Create Wallet
 	//-----------------------
-	this.CreateWallet = function (walletId, data, callback) {
-		var url = getWalletUrl( walletId.trim() );
-		post( url, data, callback );
+	this.CreateWallet = function (data, callback) {
+    var walletId = getNewWalletId();
+    var url = getWalletUrl( walletId );
+    	post( url, data, callback );
 	};
 	
 	//-----------------------
@@ -122,13 +124,14 @@ var CryptoCorp = new function () {
 	
   this.getParameters = function( value, asset, period, delay ) {
     var parameters = { 
-      "velocity_1": { "value": value, "asset": asset, "period": period, "delay": delay }
+      "velocity_1": { "value": value, "asset": asset, "period": period, "delay": delay, "limited_keys": [ KeyIndex.USER ] }
     };
     return parameters;
   }
     
   this.getPii = function( email, first, last, phone ) {
-    var enc = "fef8345f";
+    // TODO encrypt pii
+    var enc = phone;
     var pii = { "email": email, "encrypted": enc };
     return pii;
   }
@@ -189,5 +192,23 @@ var CryptoCorp = new function () {
         var redemption_script_str = Crypto.util.bytesToHex(redemption_script.buffer);
 		return redemption_script_str;
     };
+    
+  function getNewWalletId() {
+    return createUUID() ;
+  }
+  
+  function createUUID() {
+    // http://www.ietf.org/rfc/rfc4122.txt
+    var s = [];
+    var hexDigits = "0123456789abcdef";
+    for (var i = 0; i < 36; i++) {
+        s[i] = hexDigits.substr(Math.floor(Math.random() * 0x10), 1);
+    }
+    s[14] = "4";  // bits 12-15 of the time_hi_and_version field to 0010
+    s[19] = hexDigits.substr((s[19] & 0x3) | 0x8, 1);  // bits 6-7 of the clock_seq_hi_and_reserved to 01
+    s[8] = s[13] = s[18] = s[23] = "-";
 
+    var uuid = s.join("");
+    return uuid;
+  }
 };

@@ -677,7 +677,6 @@
     
     function oracleCreateWallet( event ) {
   
-      var walletId = $("#wallet_id").val().trim();
       var rulesetId = $("#ruleset_id").val().trim();
       var value = $("#velocity_value").val();
       var asset =  $("#velocity_asset").val();
@@ -692,20 +691,14 @@
       var phone = $("#pii_phone").val().trim();
       var pii = CryptoCorp.getPii( email, first, last, phone );
     
-      var limited_keys = new Array();
-      for( var i = 1 ; i <= 2 ; i++ ) {
-        var key = $("#limited_key"+i).val();
-        if( key.trim().match("^xpub") ) {
-          limited_keys.push( key );
-        }
-      }
+      var wallet_keys = [ $("#wallet_user_key").val().trim() ];
       
       var url = $('#oracle_url').val();
       CryptoCorp.setOracleUrl( url ) ;
     
       // CryptoCorp
-      var data = CryptoCorp.getWalletData( rulesetId, limited_keys, parameters, pii );
-      CryptoCorp.CreateWallet( walletId, data, oracleCreateWalletCallback ); 
+      var data = CryptoCorp.getWalletData( rulesetId, wallet_keys, parameters, pii );
+      CryptoCorp.CreateWallet( data, oracleCreateWalletCallback ); 
       $('#wallet_key').val( "Oracle consult in progress..." );
     }
     
