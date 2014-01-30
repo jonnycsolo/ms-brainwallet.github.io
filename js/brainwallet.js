@@ -702,7 +702,7 @@
       $('#wallet_key').val( "Oracle consult in progress..." );
     }
     
-    function oracleCreateWalletCallback( response ) {
+    function oracleCreateWalletCallback( response, payload ) {
       if (response.result != "success") {
         var errorString = (response.errorThrown != 'undefined') ? response.errorThrown : "";
         alert( "Wallet Creation Error: " + errorString );
@@ -711,6 +711,7 @@
       // success
       var keys = response.keys;
       alert( "Wallet Created" );
+      $('#wallet_id').val( payload.walletId );
       $('#wallet_key').val( keys.default[0] );
     }
     
@@ -1478,10 +1479,11 @@
         var signatureIndex = 1;
         var chainPaths = [""];
         var data = CryptoCorp.getSignTxData( signatureIndex, txHex, inputScripts, chainPaths );
-        CryptoCorp.SignTx( walletUrl, data, oracleSignPartialCallback ) ; 
+        var payload = { "walletUrl":walletUrl, "data":data };
+        CryptoCorp.SignTx( walletUrl, data, oracleSignPartialCallback, payload ) ; 
     }
     
-    function oracleSignPartialCallback( response ) {
+    function oracleSignPartialCallback( response, payload ) {
         // fail
         if (response.result == "error") {
             // error handling
@@ -1490,9 +1492,13 @@
         }
         // deferred
         if (response.result == "deferred") {
-            // TODO state handling
             var deferral = response.deferral ;
-            alert( "Sign Transaction deferred: " + deferral.reason );
+            alert( "Sign Transaction deferred: " + deferral.reason ); // TODO should show the period to user
+            var period = deferral.period + 100 ; // add 100 to assure timely resubmission
+            setTimeout( function() {
+                // resubmit deferred 
+                oracleResubmitDeferred( payload.walletUrl, payload.data ) ;                
+            }, period );
             return;
         }
         // success - validate data
@@ -1503,7 +1509,39 @@
         // sucess 
         $('#txHexHistory_group').show(); // the partial tx is shown
         $('#txHex').val( response.transaction.bytes ); // the full tx here
-        $('#txJSON').val( "Signed" ); // TODO jo json, but a completion indication
+        $('#txJSON').val( "Signed" ); // TODO no json, but a completion indication
+        alert( "Partial Transaction Signed" );
+    }
+    
+    function oracleResubmitDeferred( walletUrl, data ) {
+        var payload = { "walletUrl":walletUrl, "data":data };
+        CryptoCorp.SignTx( walletUrl, data, oracleResubmitDeferredCallback, payload ) ; 
+    }
+    
+    function oracleResubmitDeferredCallback( response, payload ) {
+        // fail
+        if (response.result == "error") {
+            // error handling
+            alert( "Resubmission of Deferred Transaction failed: " + response.errorThrown );
+            return;
+        }
+        // deferred
+        if (response.result == "deferred") {
+            // TODO another deferral - not good
+            var deferral = response.deferral ;
+            alert( "Resubmission of Deferred Transaction failed: " + deferral );
+            return;
+        }
+        // success - validate data
+        if (response.transaction == 'undefined' || response.transaction.bytes == 'undefined') {
+            alert( "Sign Transaction failed: Bad response");
+            return;
+        }
+        // sucess 
+        $('#txHexHistory_group').show(); // the partial tx is shown
+        $('#txHex').val( response.transaction.bytes ); // the full tx here
+        $('#txJSON').val( "Signed" ); // TODO no json, but a completion indication
+        alert( "Deferred Transaction Signed" );
     }
     
     function parseInputs(unspent, addr) {

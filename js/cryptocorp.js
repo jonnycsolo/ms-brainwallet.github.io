@@ -6,7 +6,7 @@ var CryptoCorp = new function () {
 	
 	// configurables
 	var host = "http://btc2.hyper.to";
-  var KeyIndex = Object.freeze( { USER:0, BACKUP:1, ORACLE:2 } );
+    var KeyIndex = Object.freeze( { USER:0, BACKUP:1, ORACLE:2 } );
    	
 	this.setOracleUrl = function( url ) {
 		host = url.trim();
@@ -16,9 +16,11 @@ var CryptoCorp = new function () {
 	// Create Wallet
 	//-----------------------
 	this.CreateWallet = function (data, callback) {
-    var walletId = getNewWalletId();
-    var url = getWalletUrl( walletId );
-    	post( url, data, callback );
+        var walletId = getNewWalletId();
+        var url = getWalletUrl( walletId );
+        // TODO wallet id temporary placed in the paylod, should come back in the response
+        var payload = { "walletId":url };
+        	post( url, data, callback, payload );
 	};
 	
 	//-----------------------
@@ -31,9 +33,9 @@ var CryptoCorp = new function () {
 	//-----------------------
 	// Sign Tx
 	//-----------------------
-	this.SignTx = function (walletUrl, data, callback) {
+	this.SignTx = function (walletUrl, data, callback, payload) {
 	    url = getWalletTxUrl( walletUrl.trim() )
-		post( url, data, callback );
+		post( url, data, callback, payload );
 	};
 	
 	// wallet url
