@@ -1515,7 +1515,7 @@
     
     function oracleSetDelayedResubmission( deferral, payload ) {
         var until = deferral.until;
-        var period = 5000; // FIXME debug
+        var period = 60*1000+5000; // FIXME debug
         // resubmit deferred
         setTimeout(function() {
             oracleResubmitDeferred(payload.walletUrl, payload.data);
