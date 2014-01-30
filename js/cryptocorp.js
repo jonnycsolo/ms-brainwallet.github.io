@@ -126,7 +126,8 @@ var CryptoCorp = new function () {
 	
   this.getParameters = function( value, asset, period, delay ) {
     var parameters = { 
-      "velocity_1": { "value": value, "asset": asset, "period": period, "delay": delay, "limited_keys": [ KeyIndex.USER ] }
+      "velocity_1": { "value": parseInt(value), "asset": asset, "period": parseInt(period), "limited_keys": [ KeyIndex.USER ] },
+      "delay_1": parseInt(delay),      
     };
     return parameters;
   }

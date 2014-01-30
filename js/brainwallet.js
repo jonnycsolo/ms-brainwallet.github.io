@@ -680,8 +680,8 @@
       var rulesetId = $("#ruleset_id").val().trim();
       var value = $("#velocity_value").val();
       var asset =  $("#velocity_asset").val();
-      var period = $("#velocity_period").val()*60*60;
-      var delay = $("#delay_period").val()*60*60;
+      var period = $("#velocity_period").val();
+      var delay = $("#delay_period").val();
       
       var parameters = CryptoCorp.getParameters( value, asset, period, delay );
       
@@ -1483,34 +1483,44 @@
         CryptoCorp.SignTx( walletUrl, data, oracleSignPartialCallback, payload ) ; 
     }
     
-    function oracleSignPartialCallback( response, payload ) {
+    
+    function oracleSignPartialCallback(response, payload) {
         // fail
         if (response.result == "error") {
             // error handling
-            alert( "Sign Transaction failed: " + response.errorThrown );
+            alert("Sign Transaction failed: " + response.errorThrown);
             return;
         }
         // deferred
         if (response.result == "deferred") {
-            var deferral = response.deferral ;
-            alert( "Sign Transaction deferred: " + deferral.reason ); // TODO should show the period to user
-            var period = deferral.period + 100 ; // add 100 to assure timely resubmission
-            setTimeout( function() {
-                // resubmit deferred 
-                oracleResubmitDeferred( payload.walletUrl, payload.data ) ;                
-            }, period );
-            return;
+            var deferral = response.deferral;
+            //            
+            if( deferral.reason == "delay" ) {
+                oracleSetDelayedResubmission( deferral, payload);
+                return;
+            }
+            alert("Sign Transaction deferred: " + deferral.reason);
         }
         // success - validate data
         if (response.transaction == 'undefined' || response.transaction.bytes == 'undefined') {
-            alert( "Sign Transaction failed: Bad response");
+            alert("Sign Transaction failed: Bad response");
             return;
         }
-        // sucess 
+        // sucess
         $('#txHexHistory_group').show(); // the partial tx is shown
-        $('#txHex').val( response.transaction.bytes ); // the full tx here
-        $('#txJSON').val( "Signed" ); // TODO no json, but a completion indication
-        alert( "Partial Transaction Signed" );
+        $('#txHex').val(response.transaction.bytes); // the full tx here
+        $('#txJSON').val("Signed"); // TODO no json, but a completion indication
+        alert("Partial Transaction Signed");
+    }
+    
+    function oracleSetDelayedResubmission( deferral, payload ) {
+        var until = deferral.until;
+        var period = 5000; // FIXME debug
+        // resubmit deferred
+        setTimeout(function() {
+            oracleResubmitDeferred(payload.walletUrl, payload.data);
+        }, period);
+        return;
     }
     
     function oracleResubmitDeferred( walletUrl, data ) {
