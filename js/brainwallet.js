@@ -723,7 +723,8 @@
 
         var payload = {field_id:field_id, walletUrl:walletUrl};        
         $( '#walletUrl_group').hide();
-        CryptoCorp.GetWallet( walletUrl, oracleGetWalletCallback, payload) ;   
+        CryptoCorp.GetWallet( walletUrl, oracleGetWalletCallback, payload) ;
+        return true;
     }
     
     function oracleGetWalletCallback( response, payload ) {
@@ -735,15 +736,36 @@
             return;
         }
         // success
-        var extpub3 = response.keys.default[0];
-        var b3 = new BIP32(extpub3);
-        var pubKeyHex3 = Crypto.util.bytesToHex(b3.eckey.pub.getEncoded(true));
-        $( payload.field_id ).val(pubKeyHex3);
+        var extpub = response.keys.default[0];
+        $( payload.field_id ).val( extpub );
+        
         $( '#walletUrl_group').show();
         $( '#walletUrl').val( payload.walletUrl );
-        alert( "Create Wallet: keys: " + pubKeyHex3 );
+        alert( "Wallet Key Accessed" );
         
         generate_redemption_script();
+    }
+    
+    function getPubKeyHex( field_id ) {
+        var pub_str = $('#'+field_id).val().trim();
+        if (pub_str.match("^xpub")) {
+            var bip32 = new BIP32(pub_str);
+            
+            var hex;
+            var chain_index = $('#create_chain_index').val().trim();
+            if( chain_index != "" ) {
+                var chain_path = "m/" + chain_index;
+                var derived = bip32.derive( chain_path );
+                hex = Crypto.util.bytesToHex(derived.eckey.pub.getEncoded(true));
+            } else {
+                hex = Crypto.util.bytesToHex(bip32.eckey.pub.getEncoded(true));
+            }
+            $('#derived_'+field_id).val(hex);
+            $('#derived_'+field_id+'_group').show();
+            return hex;
+        }
+        $('#derived_'+field_id+'_group').hide();
+        return pad($('#'+field_id).val().trim(), 65, '0');
     }
 
     function generate_redemption_script() {
@@ -752,16 +774,17 @@
             if (oracleGetWallet('#pub'+i)) {
                 return;
             }
-        }                
+        }
         
-        var pub1_str = pad($('#pub1').val().trim(), 65, '0');
-        var pub1 = Crypto.util.hexToBytes(pub1_str);
-
-        var pub2_str = pad($('#pub2').val().trim(), 65, '0');
-        var pub2 = Crypto.util.hexToBytes(pub2_str);
-
-        var pub3_str = pad($('#pub3').val().trim(), 65, '0');
-        var pub3 = Crypto.util.hexToBytes(pub3_str);
+        if( isDerievale() ) {
+            $('#create_chain_index').attr( 'readonly', false);
+        } else {
+            $('#create_chain_index').attr( 'readonly', true);
+        }
+        
+        var pub1 = Crypto.util.hexToBytes( getPubKeyHex( 'pub1' ) );
+        var pub2 = Crypto.util.hexToBytes( getPubKeyHex( 'pub2' ) );
+        var pub3 = Crypto.util.hexToBytes( getPubKeyHex( 'pub3' ) );
 
         // Sort the keys, then use the pubkey_order to create the permutation
         //var sorted_keys = permute_keys(sort_keys(pub1, pub2, pub3), pubkey_order);
@@ -800,6 +823,13 @@
         $("#redemption_script").val(redemption_script_str);
 
         update_p2sh_address();
+    }
+    
+    function isDerievale() {
+        if( ! $('#pub1').val().trim().match("^xpub") ) return false ; 
+        if( ! $('#pub2').val().trim().match("^xpub") ) return false ; 
+        if( ! $('#pub3').val().trim().match("^xpub") ) return false ; 
+        return true;
     }
 
     function update_p2sh_address() {
@@ -1664,6 +1694,11 @@
         onInput('#pub1', onChangePublicKey);
         onInput('#pub2', onChangePublicKey);
         onInput('#pub3', onChangePublicKey);
+        onInput('#create_chain_index', onChangePublicKey);
+        $('#derived_pub1_group').hide();
+        $('#derived_pub2_group').hide();
+        $('#derived_pub3_group').hide();
+        
         onInput('#redemption_script', onChangeRedemptionScript);
 
         $('#pubkeys_from label input').on('change', update_pubkeys_from );
