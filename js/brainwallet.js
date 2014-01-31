@@ -699,7 +699,7 @@
       // CryptoCorp
       var data = CryptoCorp.getWalletData( rulesetId, wallet_keys, parameters, pii );
       CryptoCorp.CreateWallet( data, oracleCreateWalletCallback ); 
-      $('#wallet_key').val( "Oracle consult in progress..." );
+      $('#wallet_key').val( "" );
     }
     
     function oracleCreateWalletCallback( response, payload ) {
@@ -740,7 +740,7 @@
         var extpub = response.keys.default[0];
         $( payload.field_id ).val( extpub );
         
-        $( '#walletUrl_group').show();
+        // $( '#walletUrl_group').show();  DEBUG
         $( '#walletUrl').val( payload.walletUrl );
         alert( "Wallet Key Accessed" );
         
@@ -762,7 +762,7 @@
                 hex = Crypto.util.bytesToHex(bip32.eckey.pub.getEncoded(true));
             }
             $('#derived_'+field_id).val(hex);
-            $('#derived_'+field_id+'_group').show();
+            //$('#derived_'+field_id+'_group').show(); DEBUG
             return hex;
         }
         $('#derived_'+field_id+'_group').hide();
@@ -1477,7 +1477,7 @@
         var inputScriptString = $("#txRedemptionScript").val();
         var inputScripts = [ inputScriptString ];
         var signatureIndex = 1;
-        var chainPaths = [""];
+        var chainPaths = [""]; // FIXME where is this coming from ?
         var data = CryptoCorp.getSignTxData( signatureIndex, txHex, inputScripts, chainPaths );
         var payload = { "walletUrl":walletUrl, "data":data };
         CryptoCorp.SignTx( walletUrl, data, oracleSignPartialCallback, payload ) ; 
@@ -1493,13 +1493,8 @@
         }
         // deferred
         if (response.result == "deferred") {
-            var deferral = response.deferral;
-            //            
-            if( deferral.reason == "delay" ) {
-                oracleSetDelayedResubmission( deferral, payload);
-                return;
-            }
-            alert("Sign Transaction deferred: " + deferral.reason);
+            oracleDeferredTransaction(response, payload);
+            return;
         }
         // success - validate data
         if (response.transaction == 'undefined' || response.transaction.bytes == 'undefined') {
@@ -1507,28 +1502,33 @@
             return;
         }
         // sucess
-        $('#txHexHistory_group').show(); // the partial tx is shown
+        // DEBUG $('#txHexHistory_group').show(); // the partial tx is shown
         $('#txHex').val(response.transaction.bytes); // the full tx here
-        $('#txJSON').val("Signed"); // TODO no json, but a completion indication
+        // $('#txJSON').val("Signed");
         alert("Partial Transaction Signed");
+    }
+    
+    function oracleDeferredTransaction( response, payload ) {
+        var deferral = response.deferral;
+        //  delay
+        if( deferral.reason == "delay" ) {
+            oracleSetDelayedResubmission( deferral, payload);
+            return;
+        }
+        alert("Sign Transaction deferred: " + deferral.reason);
     }
     
     function oracleSetDelayedResubmission( deferral, payload ) {
         var until = deferral.until;
-        var period = 60*1000+5000; // FIXME debug
+        var timeout = 60*1000+5000; // FIXME debug
         // resubmit deferred
         setTimeout(function() {
-            oracleResubmitDeferred(payload.walletUrl, payload.data);
-        }, period);
+            CryptoCorp.SignTx( payload.walletUrl, payload.data, oracleDelayedResubmissionCallback, payload ) ; 
+        }, timeout);
         return;
     }
     
-    function oracleResubmitDeferred( walletUrl, data ) {
-        var payload = { "walletUrl":walletUrl, "data":data };
-        CryptoCorp.SignTx( walletUrl, data, oracleResubmitDeferredCallback, payload ) ; 
-    }
-    
-    function oracleResubmitDeferredCallback( response, payload ) {
+    function oracleDelayedResubmissionCallback( response, payload ) {
         // fail
         if (response.result == "error") {
             // error handling
@@ -1548,9 +1548,9 @@
             return;
         }
         // sucess 
-        $('#txHexHistory_group').show(); // the partial tx is shown
+        // $('#txHexHistory_group').show(); // the partial tx is shown
         $('#txHex').val( response.transaction.bytes ); // the full tx here
-        $('#txJSON').val( "Signed" ); // TODO no json, but a completion indication
+        //$('#txJSON').val( "Signed" );
         alert( "Deferred Transaction Signed" );
     }
     
