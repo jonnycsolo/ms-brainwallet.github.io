@@ -111,7 +111,10 @@ var CryptoCorp = new function () {
 		}
         // extract the error message fom the xhr
         var xhrErrorText = getXhrErrorText( xhr );
-		var response = { result: "error", xhr: xhr, errorThrown: errorThrown, "xhrErrorText":xhrErrorText };
+        if( xhrErrorText != null ) {
+            errorThrown += ": " + xhrErrorText;
+        }
+		var response = { result: "error", xhr: xhr, errorThrown: errorThrown };
 		
 		callback( response, payload );
 	}
@@ -168,16 +171,15 @@ var CryptoCorp = new function () {
 	
 	this.getSignTxData = function( signatureIndex, bytes, inputScripts, inputTransactions, chainPaths ) {
 
-        var data = {
+        return {
             "signatureIndex" : signatureIndex,
             "transaction" : {
                 "bytes" : bytes,
                 "inputScripts" : inputScripts,
                 "inputTransactions" : inputTransactions,
+                "chainPaths" : chainPaths
             },
-            "chainPaths" : chainPaths
         };
-		return data;
 	};
 	
     function pad(str, len, ch) {

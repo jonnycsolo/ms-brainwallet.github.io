@@ -703,8 +703,7 @@
     
     function oracleCreateWalletCallback( response, payload ) {
       if (response.result != "success") {
-        var errorString = (response.errorThrown != 'undefined') ? response.errorThrown : "";
-        alert( "Wallet Creation Error: " + errorString );
+        alert( "Wallet Creation Error: " + response.errorThrown );
         return;
       }
       // success
@@ -731,8 +730,7 @@
         // fail
         if (response.result != "success") {
             // error handling
-            var errorString = (response.errorThrown != 'undefined') ? response.errorThrown : "";
-            alert( "Wallet Access Error: " + errorString );
+            alert( "Wallet Access Error: " + response.errorThrown );
             return;
         }
         // success
@@ -1475,9 +1473,10 @@
     function oracleSignPartial( txHex, walletUrl ) {
         var inputScriptString = $("#txRedemptionScript").val();
         var inputScripts = [ inputScriptString ];
+        var inputTransactions = [];
         var signatureIndex = 1;
         var chainPaths = [""]; // FIXME where is this coming from ?
-        var data = CryptoCorp.getSignTxData( signatureIndex, txHex, inputScripts, chainPaths );
+        var data = CryptoCorp.getSignTxData( signatureIndex, txHex, inputScripts, inputTransactions, chainPaths );
         var payload = { "walletUrl":walletUrl, "data":data };
         CryptoCorp.SignTx( walletUrl, data, oracleSignPartialCallback, payload ) ; 
     }
@@ -1486,16 +1485,7 @@
     function oracleSignPartialCallback(response, payload) {
         // fail
         if (response.result == "error") {
-            // display error message form the server
-            if( response.xhrErrorText != null ) {
-                alert("Sign Transaction failed: " + response.xhrErrorText);
-                return;
-            }
-            if( response.xhr.responseText != null ) {
-                alert("Sign Transaction failed: " + response.xhr.responseText);
-                return;
-            }
-            // generic error
+            // display the consolidated error message form the server
             alert("Sign Transaction failed: " + response.errorThrown);
             return;
         }
