@@ -430,8 +430,7 @@
         $("#genbip32private_key2").val("");
         $("#genbip32private_key3").val("");
 
-        var chain_index = parseInt($("#chain_index").val(), 10);
-        if( isNaN(chain_index) || chain_index < 0 || chain_index > 0x7fffffff ) return;
+        var chain_index = $("#chain_index").val().trim();
 
         var path_prefix = 'm/';
 
