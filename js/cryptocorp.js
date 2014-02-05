@@ -40,7 +40,7 @@ var CryptoCorp = new function () {
 	
 	// wallet url
 	function getWalletUrl(walletId) {
-		return host + "/wallets/" + walletId.trim();
+		return host + "/keychains/" + walletId.trim();
 	}
 	
 	// wallet url
@@ -109,9 +109,36 @@ var CryptoCorp = new function () {
 		if( xhr.readyState == 0 ) {
 		    errorThrown = "Timeout";
 		}
-		var response = { result: "error", xhr: xhr, errorThrown: errorThrown };
+        // extract the error message fom the xhr
+        var xhrErrorText = getXhrErrorText( xhr );
+		var response = { result: "error", xhr: xhr, errorThrown: errorThrown, "xhrErrorText":xhrErrorText };
+		
 		callback( response, payload );
-	}	
+	}
+	
+	function getXhrErrorText( xhr ) {
+	    // undefined
+	    if( xhr.responseText === undefined  ||  xhr.responseText == null ) {
+	        return null;
+	    }
+	    // html
+	    if( xhr.responseText.indexOf( "<html>") == 0 ) {
+            var start = xhr.responseText.indexOf("<title>")+7;
+            var end = xhr.responseText.indexOf("</title>");
+            var text = xhr.responseText.substring(start,end);
+            return text;            	        
+	    }
+	    // json
+	    try {
+            var json = JSON.parse( xhr.responseText );
+            if( json.error !== undefined ) {
+                return json.error;              
+            }
+	    } catch(e) {
+	    }
+	    // no text
+        return null;	    
+	}
 	
 	this.getWalletData = function( rulesetId, keys, parameters, pii ) {
 	
@@ -133,14 +160,23 @@ var CryptoCorp = new function () {
   }
     
   this.getPii = function( email, first, last, phone ) {
-    // TODO encrypt pii
-    var enc = phone;
-    var pii = { "email": email, "encrypted": enc };
+    // FIXME encrypt pii
+    var encrypted = "123456";
+    var pii = { "email": email, "phone": phone, "encrypted":encrypted }; // TODO all fields as members
     return pii;
   }
 	
-	this.getSignTxData = function( signatureIndex, bytes, inputScripts, chainPaths ) {
-		var data  = {"signatureIndex": signatureIndex, "transaction": {"bytes": bytes, "inputScripts": inputScripts}, "chainPaths": chainPaths};
+	this.getSignTxData = function( signatureIndex, bytes, inputScripts, inputTransactions, chainPaths ) {
+
+        var data = {
+            "signatureIndex" : signatureIndex,
+            "transaction" : {
+                "bytes" : bytes,
+                "inputScripts" : inputScripts,
+                "inputTransactions" : inputTransactions,
+            },
+            "chainPaths" : chainPaths
+        };
 		return data;
 	};
 	

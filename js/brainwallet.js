@@ -1487,7 +1487,16 @@
     function oracleSignPartialCallback(response, payload) {
         // fail
         if (response.result == "error") {
-            // error handling
+            // display error message form the server
+            if( response.xhrErrorText != null ) {
+                alert("Sign Transaction failed: " + response.xhrErrorText);
+                return;
+            }
+            if( response.xhr.responseText != null ) {
+                alert("Sign Transaction failed: " + response.xhr.responseText);
+                return;
+            }
+            // generic error
             alert("Sign Transaction failed: " + response.errorThrown);
             return;
         }
