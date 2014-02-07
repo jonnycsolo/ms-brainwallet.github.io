@@ -1491,7 +1491,7 @@
         }
         // deferred
         if (response.result == "deferred") {
-            oracleDeferredTransaction(response, payload);
+            oracleDeferredTransaction(response.deferral, response.now, payload);
             return;
         }
         // success - validate data
@@ -1506,24 +1506,40 @@
         alert("Partial Transaction Signed");
     }
     
-    function oracleDeferredTransaction( response, payload ) {
-        var deferral = response.deferral;
+    function oracleDeferredTransaction( deferral, serverNow, payload ) {
         //  delay
         if( deferral.reason == "delay" ) {
-            oracleSetDelayedResubmission( deferral, payload);
+            var serverNowMilli = Date.parse( serverNow );
+            var untilMilli = Date.parse( deferral.until );
+            var timeout = untilMilli - serverNowMilli;
+            oracleSetDelayedResubmission( timeout, payload);
             return;
         }
         alert("Sign Transaction deferred: " + deferral.reason);
     }
     
-    function oracleSetDelayedResubmission( deferral, payload ) {
-        var until = deferral.until;
-        var timeout = 60*1000+5000; // FIXME debug
+    function oracleSetDelayedResubmission( timeout, payload ) {
         // resubmit deferred
+        var confirmed = false;
         setTimeout(function() {
-            CryptoCorp.SignTx( payload.walletUrl, payload.data, oracleDelayedResubmissionCallback, payload ) ; 
+            if( confirmed ) {
+                CryptoCorp.SignTx( payload.walletUrl, payload.data, oracleDelayedResubmissionCallback, payload ) ; 
+            }
         }, timeout);
+        // confirm resubmission
+        confirmed = confirm( "Transaction delayed for " + getMinutesString( timeout ) +" If you click OK make sure not to close this page." );
         return;
+    }
+    
+    function getMinutesString( timeout ) {
+        var minutes = Math.round(timeout/(1000*60));
+        if( minutes < 1 ) {
+            return "less than a minute.";
+        }
+        if( minutes == 1 ) {
+            return "1 minute.";
+        }
+        return minutes + " minutes.";
     }
     
     function oracleDelayedResubmissionCallback( response, payload ) {
@@ -1537,7 +1553,7 @@
         if (response.result == "deferred") {
             // TODO another deferral - not good
             var deferral = response.deferral ;
-            alert( "Resubmission of Deferred Transaction failed: " + deferral );
+            alert( "Resubmission of Deferred Transaction failed: deferred again." );
             return;
         }
         // success - validate data
