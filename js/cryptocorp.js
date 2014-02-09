@@ -12,10 +12,15 @@ var CryptoCorp = new function () {
         BACKUP : 1,
         ORACLE : 2
     } );
+    
     this.Result = Object.freeze( {
         SUCCESS : "success",
         ERROR : "error",
         DEFERRED : "deferred"
+    } );
+    
+    this.Deferral = Object.freeze( {
+        DELAY : "delay",
     } );
 
     this.setOracleUrl = function(url) {
@@ -104,17 +109,12 @@ var CryptoCorp = new function () {
             async : false,
             url : url,
             success : function(data) {
-                response = { "result" : "success", "data" : data };
+                response = { "result" : CryptoCorp.Result.SUCCESS, "data" : data };
             },
             error : function(xhr, textStatus, errorThrown) {
                 // repackage results
-                if (xhr.readyState == 0) {
-                    errorThrown = "Timeout";
-                }
-                if (response.xhr.responseText !== undefined) {
-                    errorThrown = response.xhr.responseText;
-                }
-                response = { result : "error", xhr : xhr, errorThrown : errorThrown };
+                var consolidatedErrorText = getXhrErrorText( xhr, errorThrown );
+                response = { result : CryptoCorp.Result.ERROR, xhr : xhr, errorThrown : consolidatedErrorText };
             },
         } );
         return response;
@@ -124,7 +124,7 @@ var CryptoCorp = new function () {
 	function successCallback(data, callback, payload) {
 		// if malformed data - invoke callback as error
 		if( data == null  ||  data === undefined  ||  data.result === undefined ) {
-			var response = { result: "error", errorThrown: "No Data", data: data };
+			var response = { result: CryptoCorp.Result.ERROR, errorThrown: "No Data", data: data };
 			callback( response, payload );
 			return;
 		}
@@ -139,24 +139,21 @@ var CryptoCorp = new function () {
         console.log( "textStatus:" + textStatus );
         console.log( "errorThrown:" + errorThrown );
 
-        // repackage results
-        if (xhr.readyState == 0) {
-            errorThrown = "Timeout";
-        }
         // extract the error message fom the xhr
-        var xhrErrorText = getXhrErrorText( xhr );
-        if (xhrErrorText != null) {
-            errorThrown += ": " + xhrErrorText;
-        }
+        var consolidatedErrorText = getXhrErrorText( xhr, errorThrown );
         // callback
-        var response = { result : "error", xhr : xhr, errorThrown : errorThrown };
+        var response = { result : CryptoCorp.Result.ERROR, xhr : xhr, errorThrown : consolidatedErrorText };
         callback( response, payload );
     }
     
-    function getXhrErrorText(xhr) {
+    function getXhrErrorText(xhr, errorThrown) {
+        // timeout
+        if (xhr.readyState == 0) {
+            return "Timeout";
+        }
         // undefined
         if (xhr.responseText === undefined || xhr.responseText == null) {
-            return null;
+            return errorThrown;
         }
         // html
         if (xhr.responseText.indexOf( "<html>" ) == 0) {
@@ -174,7 +171,7 @@ var CryptoCorp = new function () {
         } catch(e) {
         }
         // no text
-        return null;
+        return errorThrown + ":" + xhr.responseText;
     }
 
     this.getWalletData = function(rulesetId, keys, parameters, pii) {
@@ -295,7 +292,6 @@ var CryptoCorp = new function () {
         return uuid;
     }
 
-
     /*
      * get input transactions for script address
      */
@@ -303,7 +299,7 @@ var CryptoCorp = new function () {
         // extract the address from the script
         var address = this.getScriptAddress( inputScriptString );
         // read unspent 
-        var url = getUnspentUrl(address);
+        var url = getUnspentUrl( address );
         var response = getSync( url, "application/json" );
         if (response.result != this.Result.SUCCESS) {
             return response;
@@ -322,7 +318,7 @@ var CryptoCorp = new function () {
         for (var i = 0; i < unspent_outputs.length; i++) {
             // reverse the tx bytes to match blockcahin requirement
             var tx_hash = unspent_outputs[i].tx_hash;
-            var tx_hash_reversed = Crypto.util.bytesToHex( Crypto.util.hexToBytes( tx_hash ).reverse( ) )
+            var tx_hash_reversed = Crypto.util.bytesToHex( Crypto.util.hexToBytes( tx_hash ).reverse() );
             var url = getRawtxUrl( tx_hash_reversed );
             // get the tx hex
             var response = getSync( url, "text" );

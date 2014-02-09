@@ -673,62 +673,62 @@
         // TODO - elimiate multiple hits on partial URL
         return (host.indexOf( "http") == 0) ;
     }
+
+    function oracleCreateWallet(event) {
     
-    function oracleCreateWallet( event ) {
-  
-      var rulesetId = $("#ruleset_id").val().trim();
-      var value = $("#velocity_value").val();
-      var asset =  $("#velocity_asset").val();
-      var period = $("#velocity_period").val();
-      var delay = $("#delay_period").val();
-      
-      var parameters = CryptoCorp.getParameters( value, asset, period, delay );
-      
-      var email = $("#pii_email").val().trim();
-      var first = $("#pii_first").val().trim();
-      var last = $("#pii_last").val().trim();
-      var phone = $("#pii_phone").val().trim();
-      var pii = CryptoCorp.getPii( email, first, last, phone );
+        var rulesetId = $( "#ruleset_id" ).val().trim();
+        var value = $( "#velocity_value" ).val();
+        var asset = $( "#velocity_asset" ).val();
+        var period = $( "#velocity_period" ).val();
+        var delay = $( "#delay_period" ).val();
     
-      var wallet_keys = [ $("#wallet_user_key").val().trim() ];
-      
-      var url = $('#oracle_url').val();
-      CryptoCorp.setOracleUrl( url ) ;
+        var parameters = CryptoCorp.getParameters( value, asset, period, delay );
     
-      // CryptoCorp
-      var data = CryptoCorp.getWalletData( rulesetId, wallet_keys, parameters, pii );
-      CryptoCorp.CreateWallet( data, oracleCreateWalletCallback ); 
-      $('#wallet_key').val( "" );
+        var email = $( "#pii_email" ).val().trim();
+        var first = $( "#pii_first" ).val().trim();
+        var last = $( "#pii_last" ).val().trim();
+        var phone = $( "#pii_phone" ).val().trim();
+        var pii = CryptoCorp.getPii( email, first, last, phone );
+    
+        var wallet_keys = [$( "#wallet_user_key" ).val().trim()];
+    
+        var url = $( '#oracle_url' ).val();
+        CryptoCorp.setOracleUrl( url );
+    
+        // CryptoCorp
+        var data = CryptoCorp.getWalletData( rulesetId, wallet_keys, parameters, pii );
+        CryptoCorp.CreateWallet( data, oracleCreateWalletCallback );
+        $( '#wallet_key' ).val( "" );
     }
     
     function oracleCreateWalletCallback( response, payload ) {
-      if (response.result != "success") {
-        alert( "Wallet Creation Error: " + response.errorThrown );
-        return;
-      }
-      // success
-      var keys = response.keys;
-      alert( "Wallet Created" );
-      $('#wallet_id').val( payload.walletId );
-      $('#wallet_key').val( keys.default[0] );
+        if (response.result != CryptoCorp.Result.SUCCESS) {
+            alert( "Wallet Creation Error: " + response.errorThrown );
+            return;
+        }
+        // success
+        var keys = response.keys;
+        alert( "Wallet Created" );
+        $('#wallet_id').val( payload.walletId );
+        $('#wallet_key').val( keys.default[0] );
     }
     
-    function oracleGetWallet( field_id ) {
-        // if not oracle host 
-        var walletUrl = $(field_id).val().trim();
-        if ( !isHost( walletUrl ) ) {
+    function oracleGetWallet(field_id) {
+        // if not oracle host
+        var walletUrl = $( field_id ).val().trim();
+        if (!isHost( walletUrl )) {
             return false;
         }
-
-        var payload = {field_id:field_id, walletUrl:walletUrl};        
-        $( '#walletUrl_group').hide();
-        CryptoCorp.GetWallet( walletUrl, oracleGetWalletCallback, payload) ;
+    
+        var payload = { field_id : field_id, walletUrl : walletUrl };
+        $( '#walletUrl_group' ).hide( );
+        CryptoCorp.GetWallet( walletUrl, oracleGetWalletCallback, payload );
         return true;
     }
     
-    function oracleGetWalletCallback( response, payload ) {
+    function oracleGetWalletCallback(response, payload) {
         // fail
-        if (response.result != "success") {
+        if (response.result != CryptoCorp.Result.SUCCESS) {
             // error handling
             alert( "Wallet Access Error: " + response.errorThrown );
             return;
@@ -736,12 +736,12 @@
         // success
         var extpub = response.keys.default[0];
         $( payload.field_id ).val( extpub );
-        
+    
         // $( '#walletUrl_group').show();  DEBUG
-        $( '#walletUrl').val( payload.walletUrl );
+        $( '#walletUrl' ).val( payload.walletUrl );
         alert( "Wallet Key Accessed" );
-        
-        generate_redemption_script();
+    
+        generate_redemption_script( );
     }
     
     function getPubKeyHex( field_id ) {
@@ -1470,37 +1470,37 @@
         }
     }
     
-    function oracleSignPartial( txHex, walletUrl ) {
+    function oracleSignPartial(txHex, walletUrl) {
         // get the input transactions - blocking call
-        var inputScriptString = $("#txRedemptionScript").val();
-        var response = CryptoCorp.getInputTransactions( inputScriptString ) ;
-        if( response.result != CryptoCorp.Result.SUCCESS ) {
+        var inputScriptString = $( "#txRedemptionScript" ).val();
+        var response = CryptoCorp.getInputTransactions( inputScriptString );
+        if (response.result != CryptoCorp.Result.SUCCESS) {
             alert( "Transaction Inputs Error: " + response.errorThrown );
             return;
         }
-        var inputTransactions = response.data ;
-        var inputScripts = [ inputScriptString ];
+        var inputTransactions = response.data;
+        var inputScripts = [inputScriptString];
         var signatureIndex = 1;
         var chainPaths = [""]; // FIXME where is this coming from ?
         var data = CryptoCorp.getSignTxData( signatureIndex, txHex, inputScripts, inputTransactions, chainPaths );
-        var payload = { "walletUrl":walletUrl, "data":data };
-        CryptoCorp.SignTx( walletUrl, data, oracleSignPartialCallback, payload ) ; 
-    }    
+        var payload = { "walletUrl" : walletUrl, "data" : data };
+        CryptoCorp.SignTx( walletUrl, data, oracleSignPartialCallback, payload );
+    }
     
     function oracleSignPartialCallback(response, payload) {
         // fail
-        if (response.result == "error") {
+        if (response.result == CryptoCorp.Result.ERROR) {
             // display the consolidated error message form the server
             alert("Sign Transaction failed: " + response.errorThrown);
             return;
         }
         // deferred
-        if (response.result == "deferred") {
+        if (response.result == CryptoCorp.Result.DEFERRED) {
             oracleDeferredTransaction(response.deferral, response.now, payload);
             return;
         }
         // success - validate data
-        if (response.transaction == 'undefined' || response.transaction.bytes == 'undefined') {
+        if (response.transaction === undefined || response.transaction.bytes === undefined) {
             alert("Sign Transaction failed: Bad response");
             return;
         }
@@ -1511,64 +1511,65 @@
         alert("Partial Transaction Signed");
     }
     
-    function oracleDeferredTransaction( deferral, serverNow, payload ) {
+    function oracleDeferredTransaction(deferral, serverNow, payload) {
         //  delay
-        if( deferral.reason == "delay" ) {
+        if (deferral.reason == CryptoCorp.Deferral.DELAY) {
             var serverNowMilli = Date.parse( serverNow );
             var untilMilli = Date.parse( deferral.until );
             var timeout = untilMilli - serverNowMilli;
-            oracleSetDelayedResubmission( timeout, payload);
+            oracleSetDelayedResubmission( timeout, payload );
             return;
         }
-        alert("Sign Transaction deferred: " + deferral.reason);
+        alert( "Sign Transaction deferred: " + deferral.reason );
     }
     
-    function oracleSetDelayedResubmission( timeout, payload ) {
+    function oracleSetDelayedResubmission(timeout, payload) {
         // resubmit deferred
         var confirmed = false;
-        setTimeout(function() {
-            if( confirmed ) {
-                CryptoCorp.SignTx( payload.walletUrl, payload.data, oracleDelayedResubmissionCallback, payload ) ; 
+        setTimeout( function() {
+            if (confirmed) {
+                CryptoCorp.SignTx( payload.walletUrl, payload.data, oracleDelayedResubmissionCallback, payload );
             }
-        }, timeout);
+        }, timeout );
         // confirm resubmission
-        confirmed = confirm( "Transaction delayed for " + getMinutesString( timeout ) +" If you click OK make sure not to close this page." );
+        confirmed = confirm( "Transaction delayed for " + getMinutesString( timeout ) + " If you click OK make sure not to close this page." );
         return;
     }
     
-    function getMinutesString( timeout ) {
-        var minutes = Math.round(timeout/(1000*60));
-        if( minutes < 1 ) {
+    function getMinutesString(timeout) {
+        var minutes = Math.round( timeout / (1000 * 60) );
+        if (minutes < 1) {
             return "less than a minute.";
         }
-        if( minutes == 1 ) {
+        if (minutes == 1) {
             return "1 minute.";
         }
         return minutes + " minutes.";
     }
     
-    function oracleDelayedResubmissionCallback( response, payload ) {
+    function oracleDelayedResubmissionCallback(response, payload) {
         // fail
-        if (response.result == "error") {
+        if (response.result == CryptoCorp.Result.ERROR) {
             // error handling
             alert( "Resubmission of Deferred Transaction failed: " + response.errorThrown );
             return;
         }
         // deferred
-        if (response.result == "deferred") {
+        if (response.result == CryptoCorp.Result.DEFERRED) {
             // TODO another deferral - not good
-            var deferral = response.deferral ;
+            var deferral = response.deferral;
             alert( "Resubmission of Deferred Transaction failed: deferred again." );
             return;
         }
         // success - validate data
-        if (response.transaction == 'undefined' || response.transaction.bytes == 'undefined') {
-            alert( "Sign Transaction failed: Bad response");
+        if (response.transaction == undefined || response.transaction.bytes == undefined) {
+            alert( "Sign Transaction failed: Bad response" );
             return;
         }
-        // sucess 
+        // sucess
         // $('#txHexHistory_group').show(); // the partial tx is shown
-        $('#txHex').val( response.transaction.bytes ); // the full tx here
+        $( '#txHex' ).val( response.transaction.bytes );
+        // the full tx here
         //$('#txJSON').val( "Signed" );
         alert( "Deferred Transaction Signed" );
     }
