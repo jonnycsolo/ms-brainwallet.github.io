@@ -7,6 +7,7 @@ var CryptoCorp = new function () {
 	// configurables
 	var host = "http://btc2.hyper.to";
     var KeyIndex = Object.freeze( { USER:0, BACKUP:1, ORACLE:2 } );
+    this.Result = Object.freeze( { SUCCESS:"success", ERROR:"error", DEFERRED:"deferred" } );
    	
 	this.setOracleUrl = function( url ) {
 		host = url.trim();
@@ -86,6 +87,30 @@ var CryptoCorp = new function () {
 		});
 	}
 	
+    function getSync(url, contentType) {
+        var response;
+        $.ajax({
+            contentType: contentType,
+            crossDomain: true,
+            async: false,
+            url: url,
+            success: function ( data ) {
+                response = {"result":"success", "data":data};
+            },
+            error: function( xhr, textStatus, errorThrown ) {
+                // repackage results
+                if (xhr.readyState == 0) {
+                    errorThrown = "Timeout";
+                }
+                if (response.xhr.responseText !== undefined ){
+                    errorThrown = response.xhr.responseText;
+                }
+                response = { result: "error", xhr: xhr, errorThrown: errorThrown };
+            },
+        });
+        return response;
+    }
+    
 	// post callback - success
 	function successCallback(data, callback, payload) {
 		// if malformed data - invoke callback as error
@@ -252,4 +277,65 @@ var CryptoCorp = new function () {
     var uuid = s.join("");
     return uuid;
   }
-};
+
+
+    /*
+     * get input transaxctions for script address
+     */
+    this.getInputTransactions = function( inputScriptString) {
+        // extract the address from the script
+        var address = this.getScriptAddress( inputScriptString );
+        // read unspent 
+        var url = getUnspentUrl(address);
+        var response = getSync( url, "application/json" );
+        if (response.result != this.Result.SUCCESS) {
+            return response;
+        }
+        // extract the input transactions from the unspent outputs
+        var response = this.getInputTransactionsFromUnspent( response.data.unspent_outputs );
+        return response;
+    }
+    
+    /*
+     * iterrate on all unspent inputs and get the transactions
+     */
+    this.getInputTransactionsFromUnspent = function(unspent_outputs) {
+        var inputTransactions = new Array();
+        // for each transaction
+        for (var i = 0; i < unspent_outputs.length; i++) {
+            // reverse the tx bytes to match blockcahin requirement
+            var tx_hash = unspent_outputs[i].tx_hash;
+            var tx_hash_reversed = Crypto.util.bytesToHex( Crypto.util.hexToBytes( tx_hash ).reverse( ) )
+            var url = getRawtxUrl( tx_hash_reversed );
+            // get the tx hex
+            var response = getSync( url, "text" );
+            if (response.result != this.Result.SUCCESS) {
+                return response;
+            }
+            inputTransactions.push( response.data );
+        }
+        response = { "result": this.Result.SUCCESS, "data": inputTransactions };
+        return response;
+    }
+    
+    /*
+     * get the address from a redemption script
+     */
+    this.getScriptAddress = function(inputScriptString) {
+        var bytes = Crypto.util.hexToBytes( inputScriptString );
+        var redemptionScript = new Bitcoin.Script(bytes);
+        var redemptionScriptHash160 = Bitcoin.Util.sha256ripe160( redemptionScript.buffer );
+        var p2shAddress = new Bitcoin.Address(redemptionScriptHash160);
+        p2shAddress.version = 5; // BTC_MAIN
+        return ""+p2shAddress;
+    }
+    
+    function getUnspentUrl(address) {
+        return "https://blockchain.info/unspent?cors=true&address=" + address;
+    }
+    
+    function getRawtxUrl(tx_hash_reversed) {
+        return "https://blockchain.info/rawtx/" + tx_hash_reversed + "?format=hex&cors=true";
+    }
+
+}

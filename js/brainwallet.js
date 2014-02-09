@@ -1471,16 +1471,21 @@
     }
     
     function oracleSignPartial( txHex, walletUrl ) {
+        // get the input transactions - blocking call
         var inputScriptString = $("#txRedemptionScript").val();
+        var response = CryptoCorp.getInputTransactions( inputScriptString ) ;
+        if( response.result != CryptoCorp.Result.SUCCESS ) {
+            alert( "Transaction Inputs Error: " + response.errorThrown );
+            return;
+        }
+        var inputTransactions = response.data ;
         var inputScripts = [ inputScriptString ];
-        var inputTransactions = [];
         var signatureIndex = 1;
         var chainPaths = [""]; // FIXME where is this coming from ?
         var data = CryptoCorp.getSignTxData( signatureIndex, txHex, inputScripts, inputTransactions, chainPaths );
         var payload = { "walletUrl":walletUrl, "data":data };
         CryptoCorp.SignTx( walletUrl, data, oracleSignPartialCallback, payload ) ; 
-    }
-    
+    }    
     
     function oracleSignPartialCallback(response, payload) {
         // fail
