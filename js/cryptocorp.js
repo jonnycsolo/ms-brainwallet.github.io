@@ -298,7 +298,7 @@ var CryptoCorp = new function () {
      * @param redemption script
      * @return array of raw transactions
      */
-    this.getInputTransactions = function(inputScriptString) {
+    this.getInputTransactions = function(inputScriptString, callback) {
         // extract the address from the script
         var address = this.getScriptAddress( inputScriptString );
         // read unspent 
@@ -309,7 +309,7 @@ var CryptoCorp = new function () {
         }
         // extract the input transactions from the unspent outputs
         var response = this.getInputTransactionsFromUnspent( response.data.unspent_outputs );
-        return response;
+        callback( response );
     }
     
     /*
@@ -325,31 +325,6 @@ var CryptoCorp = new function () {
             // reverse the tx bytes to match blockcahin requirement
             var tx_hash = unspent_outputs[i].tx_hash;
             var tx_hash_reversed = Crypto.util.bytesToHex( Crypto.util.hexToBytes( tx_hash ).reverse() );
-            var url = getRawtxUrl( tx_hash_reversed );
-            // get the tx hex
-            var response = getSync( url, "text" );
-            if (response.result != this.Result.SUCCESS) {
-                return response;
-            }
-            inputTransactions.push( response.data );
-        }
-        response = { "result": this.Result.SUCCESS, "data": inputTransactions };
-        return response;
-    }
-    
-    /*
-     * get the inputs for a serialized transaction
-     *
-     * @param serialized transaction bytes
-     * @return array of raw transactions
-     */
-    this.getInputTransactionsFromSerialized = function(bytes) {
-        var tx = Bitcoin.Transaction.deserialize(bytes);
-        var inputTransactions = new Array();
-        for (var i=0 ; i<tx.ins.length ; i++) {
-            var txIn = tx.ins[i];
-            var hash64 = txIn.outpoint.hash;
-            var tx_hash_reversed = Crypto.util.bytesToHex( Crypto.util.base64ToBytes( hash64 ).reverse() );
             var url = getRawtxUrl( tx_hash_reversed );
             // get the tx hex
             var response = getSync( url, "text" );

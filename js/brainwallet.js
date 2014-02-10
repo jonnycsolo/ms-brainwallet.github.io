@@ -1473,12 +1473,17 @@
     function oracleSignPartial(txHex, walletUrl) {
         // get the input transactions - blocking call
         var inputScriptString = $( "#txRedemptionScript" ).val();
-        var response = CryptoCorp.getInputTransactions( inputScriptString );
-        if (response.result != CryptoCorp.Result.SUCCESS) {
-            alert( "Transaction Inputs Error: " + response.errorThrown );
-            return;
-        }
-        var inputTransactions = response.data;
+        CryptoCorp.getInputTransactions( inputScriptString, function(response) {
+            if (response.result != CryptoCorp.Result.SUCCESS) {
+                alert( "Transaction Inputs Error: " + response.errorThrown );
+                return;
+            }
+            oracleSignPartialWithInputs(txHex, walletUrl, response.data);
+        });
+    }
+    
+    function oracleSignPartialWithInputs(txHex, walletUrl, inputTransactions) {
+        var inputScriptString = $( "#txRedemptionScript" ).val();
         var inputScripts = [inputScriptString];
         var signatureIndex = 1;
         var chainPaths = [""]; // FIXME where is this coming from ?
