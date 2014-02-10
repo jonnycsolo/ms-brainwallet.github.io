@@ -293,9 +293,12 @@ var CryptoCorp = new function () {
     }
 
     /*
-     * get input transactions for script address
+     * get input transactions for redemption script
+     *
+     * @param redemption script
+     * @return array of raw transactions
      */
-    this.getInputTransactions = function( inputScriptString) {
+    this.getInputTransactions = function(inputScriptString) {
         // extract the address from the script
         var address = this.getScriptAddress( inputScriptString );
         // read unspent 
@@ -310,7 +313,10 @@ var CryptoCorp = new function () {
     }
     
     /*
-     * iterrate on all unspent inputs and get the transactions
+     * iterrate on all unspent inputs and get the input transactions
+     *
+     * @param serialized transaction bytes
+     * @return array of raw transactions
      */
     this.getInputTransactionsFromUnspent = function(unspent_outputs) {
         var inputTransactions = new Array();
@@ -332,15 +338,43 @@ var CryptoCorp = new function () {
     }
     
     /*
+     * get the inputs for a serialized transaction
+     *
+     * @param serialized transaction bytes
+     * @return array of raw transactions
+     */
+    this.getInputTransactionsFromSerialized = function(bytes) {
+        var tx = Bitcoin.Transaction.deserialize(bytes);
+        var inputTransactions = new Array();
+        for (var i=0 ; i<tx.ins.length ; i++) {
+            var txIn = tx.ins[i];
+            var hash64 = txIn.outpoint.hash;
+            var tx_hash_reversed = Crypto.util.bytesToHex( Crypto.util.base64ToBytes( hash64 ).reverse() );
+            var url = getRawtxUrl( tx_hash_reversed );
+            // get the tx hex
+            var response = getSync( url, "text" );
+            if (response.result != this.Result.SUCCESS) {
+                return response;
+            }
+            inputTransactions.push( response.data );
+        }
+        response = { "result": this.Result.SUCCESS, "data": inputTransactions };
+        return response;
+    }
+    
+    /*
      * get the address from a redemption script
+     *
+     * @param inputScriptString the input script
+     * @return p2sh address string
      */
     this.getScriptAddress = function(inputScriptString) {
-        var bytes = Crypto.util.hexToBytes( inputScriptString );
+        var bytes = Crypto.util.hexToBytes(inputScriptString);
         var redemptionScript = new Bitcoin.Script(bytes);
-        var redemptionScriptHash160 = Bitcoin.Util.sha256ripe160( redemptionScript.buffer );
+        var redemptionScriptHash160 = Bitcoin.Util.sha256ripe160(redemptionScript.buffer);
         var p2shAddress = new Bitcoin.Address(redemptionScriptHash160);
         p2shAddress.version = 5; // BTC_MAIN
-        return ""+p2shAddress;
+        return "" + p2shAddress;
     }
     
     function getUnspentUrl(address) {
