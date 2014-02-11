@@ -674,7 +674,7 @@
         return (host.indexOf( "http") == 0) ;
     }
 
-    function oracleCreateWallet(event) {
+    function oracleCreateKeychain(event) {
     
         var rulesetId = $( "#ruleset_id" ).val().trim();
         var value = $( "#velocity_value" ).val();
@@ -690,56 +690,53 @@
         var phone = $( "#pii_phone" ).val().trim();
         var pii = CryptoCorp.getPii( email, first, last, phone );
     
-        var wallet_keys = [$( "#wallet_user_key" ).val().trim()];
-    
-        var url = $( '#oracle_url' ).val();
-        CryptoCorp.setOracleUrl( url );
+        var keychain_keys = [$( "#keychain_user_key" ).val().trim()];
     
         // CryptoCorp
-        var data = CryptoCorp.getWalletData( rulesetId, wallet_keys, parameters, pii );
-        CryptoCorp.CreateWallet( data, oracleCreateWalletCallback );
-        $( '#wallet_key' ).val( "" );
+        var data = CryptoCorp.getKeychainData( rulesetId, keychain_keys, parameters, pii );
+        CryptoCorp.CreateKeychain( data, oracleCreateKeychainCallback );
+        $( '#keychain_key' ).val( "" );
     }
     
-    function oracleCreateWalletCallback( response, payload ) {
+    function oracleCreateKeychainCallback( response, payload ) {
         if (response.result != CryptoCorp.Result.SUCCESS) {
-            alert( "Wallet Creation Error: " + response.errorThrown );
+            alert( "Oracle Keychain Creation Error: " + response.errorThrown );
             return;
         }
         // success
         var keys = response.keys;
-        alert( "Wallet Created" );
-        $('#wallet_id').val( payload.walletId );
-        $('#wallet_key').val( keys.default[0] );
+        alert( "Oracle Keychain Created" );
+        $('#keychain_url').val( payload.keychainUrl );
+        $('#keychain_key').val( keys.default[0] );
     }
     
-    function oracleGetWallet(field_id) {
+    function oracleGetKeychain(field_id) {
         // if not oracle host
-        var walletUrl = $( field_id ).val().trim();
-        if (!isHost( walletUrl )) {
+        var keychainUrl = $( field_id ).val().trim();
+        if (!isHost( keychainUrl )) {
             return false;
         }
     
-        var payload = { field_id : field_id, walletUrl : walletUrl };
-        $( '#walletUrl_group' ).hide( );
-        CryptoCorp.GetWallet( walletUrl, oracleGetWalletCallback, payload );
+        var payload = { field_id : field_id, keychainUrl : keychainUrl };
+        $( '#keychainUrl_group' ).hide( );
+        CryptoCorp.GetKeychain( keychainUrl, oracleGetKeychainCallback, payload );
         return true;
     }
     
-    function oracleGetWalletCallback(response, payload) {
+    function oracleGetKeychainCallback(response, payload) {
         // fail
         if (response.result != CryptoCorp.Result.SUCCESS) {
             // error handling
-            alert( "Wallet Access Error: " + response.errorThrown );
+            alert( "Keychain Access Error: " + response.errorThrown );
             return;
         }
         // success
         var extpub = response.keys.default[0];
         $( payload.field_id ).val( extpub );
     
-        // $( '#walletUrl_group').show();  DEBUG
-        $( '#walletUrl' ).val( payload.walletUrl );
-        alert( "Wallet Key Accessed" );
+        // $( '#keychainUrl_group').show();  DEBUG
+        $( '#keychainUrl' ).val( payload.keychainUrl );
+        alert( "Keychain Accessed" );
     
         generate_redemption_script( );
     }
@@ -769,7 +766,7 @@
     function generate_redemption_script() {
         // if key from oracle - bail here
         for( var i = 1 ; i <= 3 ; i++ ) {
-            if (oracleGetWallet('#pub'+i)) {
+            if (oracleGetKeychain('#pub'+i)) {
                 return;
             }
         }
@@ -1373,13 +1370,13 @@
 
         // true if one of the keys is an oracle url        
         var isOracle = false;
-        var walletUrl; // TODO supports only 1 oracle
+        var keychainUrl; // TODO supports only 1 oracle
         
         var eckeyI = new Array();
         for( var i=0; i<m ; i++) {
             // check for oracle url
-            walletUrl=$( '#txSec'+(i+1) ).val();
-            if( isHost(walletUrl) ) {
+            keychainUrl=$( '#txSec'+(i+1) ).val();
+            if( isHost(keychainUrl) ) {
                 isOracle = true;
                 continue;
             }
@@ -1466,11 +1463,11 @@
             $('#txJSON').val("");
             $('#txHex').val("");
             // send to the oracle for partial 
-            oracleSignPartial( txHex, walletUrl ) ;
+            oracleSignPartial( txHex, keychainUrl ) ;
         }
     }
     
-    function oracleSignPartial(txHex, walletUrl) {
+    function oracleSignPartial(txHex, keychainUrl) {
         // get the input transactions - blocking call
         var inputScriptString = $( "#txRedemptionScript" ).val();
         CryptoCorp.getInputTransactions( inputScriptString, function(response) {
@@ -1478,18 +1475,18 @@
                 alert( "Transaction Inputs Error: " + response.errorThrown );
                 return;
             }
-            oracleSignPartialWithInputs(txHex, walletUrl, response.data);
+            oracleSignPartialWithInputs(txHex, keychainUrl, response.data);
         });
     }
     
-    function oracleSignPartialWithInputs(txHex, walletUrl, inputTransactions) {
+    function oracleSignPartialWithInputs(txHex, keychainUrl, inputTransactions) {
         var inputScriptString = $( "#txRedemptionScript" ).val();
         var inputScripts = [inputScriptString];
         var signatureIndex = 1;
         var chainPaths = [""]; // FIXME where is this coming from ?
         var data = CryptoCorp.getSignTxData( signatureIndex, txHex, inputScripts, inputTransactions, chainPaths );
-        var payload = { "walletUrl" : walletUrl, "data" : data };
-        CryptoCorp.SignTx( walletUrl, data, oracleSignPartialCallback, payload );
+        var payload = { "keychainUrl" : keychainUrl, "data" : data };
+        CryptoCorp.SignTx( keychainUrl, data, oracleSignPartialCallback, payload );
     }
     
     function oracleSignPartialCallback(response, payload) {
@@ -1533,7 +1530,7 @@
         var confirmed = false;
         setTimeout( function() {
             if (confirmed) {
-                CryptoCorp.SignTx( payload.walletUrl, payload.data, oracleDelayedResubmissionCallback, payload );
+                CryptoCorp.SignTx( payload.keychainUrl, payload.data, oracleDelayedResubmissionCallback, payload );
             }
         }, timeout );
         // confirm resubmission
@@ -1782,7 +1779,7 @@
         $("#pubkey_order_next").on('click', pubkey_order_next );
         
         // oracle
-        $("#oracle_create_wallet_button").click( oracleCreateWallet );
+        $("#oracle_create_keychain_button").click( oracleCreateKeychain );
 
         //initializePublicKeys();
         reqUpdateLabel();
@@ -1825,7 +1822,7 @@
         $('#txSend').click(txSendCoinbin);
         $('#txSign').click(txSign);
         $('#txHexHistory_group').hide();
-        $('#walletUrl_group').hide();
+        $('#keychainUrl_group').hide();
 
         // converter
 

@@ -27,40 +27,52 @@ var CryptoCorp = new function () {
         host = url.trim( );
     }; 
 	
-	//-----------------------
-	// Create Wallet
-	//-----------------------
-    this.CreateWallet = function(data, callback) {
-        var walletId = getNewWalletId( );
-        var url = getWalletUrl( walletId );
-        // TODO wallet id temporary placed in the paylod, should come back in the response
-        var payload = { "walletId" : url };
+	/*
+	 * create a new keychain
+	 * 
+	 * @param user data
+	 * @param callback api response handler
+	 */
+    this.CreateKeychain = function(data, callback) {
+        var keychainId = getNewKeychainId();
+        var url = getKeychainUrl( keychainId );
+        // TODO keychain id temporary placed in the paylod, should come back in the response
+        var payload = { "keychainUrl" : url };
         post( url, data, callback, payload );
     }; 
 	
-	//-----------------------
-	// Get Wallet
-	//-----------------------
-    this.GetWallet = function(walletUrl, callback, payload) {
-        get( walletUrl.trim( ), callback, payload );
+    /*
+     * get a keychain
+     * 
+     * @param keychain Url
+     * @param callback api response handler
+     * @payload pass through to callback 
+     */
+    this.GetKeychain = function(keychainUrl, callback, payload) {
+        get( keychainUrl.trim(), callback, payload );
     }; 
 	
-	//-----------------------
-	// Sign Tx
-	//-----------------------
-    this.SignTx = function(walletUrl, data, callback, payload) {
-        url = getWalletTxUrl( walletUrl.trim( ) )
+    /*
+     * sign a transaction
+     * 
+     * @param keychain Url
+     * @param data transaction data
+     * @param callback api response handler
+     * @payload pass through to callback 
+     */
+    this.SignTx = function(keychainUrl, data, callback, payload) {
+        url = getKeychainTxUrl( keychainUrl.trim( ) )
         post( url, data, callback, payload );
     };
 
-    // wallet url
-    function getWalletUrl(walletId) {
-        return host + "/keychains/" + walletId.trim( );
+    // keychain url
+    function getKeychainUrl(keychainId) {
+        return host + "/keychains/" + keychainId.trim( );
     }
 
-    // wallet url
-    function getWalletTxUrl(walletUrl) {
-        return walletUrl.trim( ) + "/transactions";
+    // keychain TX url
+    function getKeychainTxUrl(keychainUrl) {
+        return keychainUrl.trim( ) + "/transactions";
     }
 
     function get(url, callback, payload) {
@@ -146,6 +158,7 @@ var CryptoCorp = new function () {
         callback( response, payload );
     }
     
+    // extract the error string out of the xhr
     function getXhrErrorText(xhr, errorThrown) {
         // timeout
         if (xhr.readyState == 0) {
@@ -174,7 +187,8 @@ var CryptoCorp = new function () {
         return errorThrown + ":" + xhr.responseText;
     }
 
-    this.getWalletData = function(rulesetId, keys, parameters, pii) {
+    // create the keychain data objact
+    this.getKeychainData = function(rulesetId, keys, parameters, pii) {
         return {
             "rulesetId" : rulesetId,
             "keys" : keys,
@@ -183,7 +197,7 @@ var CryptoCorp = new function () {
         };
     };
 	
-    
+    // create the keychain parameters
     this.getParameters = function(value, asset, period, delay) {
         return {
             "velocity_1" : {
@@ -207,6 +221,7 @@ var CryptoCorp = new function () {
         return pii;
     }
 	
+	// create the transaction data object
     this.getSignTxData = function(signatureIndex, bytes, inputScripts, inputTransactions, chainPaths) {    
         return {
             "signatureIndex" : signatureIndex,
@@ -271,7 +286,7 @@ var CryptoCorp = new function () {
 		return redemption_script_str;
     };
     
-    function getNewWalletId() {
+    function getNewKeychainId() {
         return createUUID( );
     }
     
