@@ -222,14 +222,13 @@ var CryptoCorp = new function () {
     }
 	
 	// create the transaction data object
-    this.getSignTxData = function(signatureIndex, bytes, inputScripts, inputTransactions, chainPaths) {    
+    this.getSignTxData = function(signatureIndex, bytes, inputScripts, inputTransactions) {    
         return {
             "signatureIndex" : signatureIndex,
             "transaction" : {
                 "bytes" : bytes,
                 "inputScripts" : inputScripts,
                 "inputTransactions" : inputTransactions,
-                "chainPaths" : chainPaths
             },
         };
     };
