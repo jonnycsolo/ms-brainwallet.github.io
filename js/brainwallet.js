@@ -669,78 +669,6 @@
         throw new Error("Invalid");
     }
     
-    function isHost( host ) {
-        // TODO - elimiate multiple hits on partial URL
-        return (host.indexOf( "http") == 0) ;
-    }
-
-    function oracleCreateKeychain(event) {
-    
-        var rulesetId = $( "#ruleset_id" ).val().trim();
-        var value = $( "#velocity_value" ).val();
-        var asset = $( "#velocity_asset" ).val();
-        var period = $( "#velocity_period" ).val();
-        var delay = $( "#delay_period" ).val();
-    
-        var parameters = CryptoCorp.getParameters( value, asset, period, delay );
-    
-        var email = $( "#pii_email" ).val().trim();
-        var first = $( "#pii_first" ).val().trim();
-        var last = $( "#pii_last" ).val().trim();
-        var phone = $( "#pii_phone" ).val().trim();
-        var pii = CryptoCorp.getPii( email, first, last, phone );
-    
-        var keychain_keys = [$( "#keychain_user_key" ).val().trim()];
-    
-        // CryptoCorp
-        var data = CryptoCorp.getKeychainData( rulesetId, keychain_keys, parameters, pii );
-        CryptoCorp.CreateKeychain( data, oracleCreateKeychainCallback );
-        $( '#keychain_key' ).val( "" );
-    }
-    
-    function oracleCreateKeychainCallback( response, payload ) {
-        if (response.result != CryptoCorp.Result.SUCCESS) {
-            alert( "Oracle Keychain Creation Error: " + response.errorThrown );
-            return;
-        }
-        // success
-        var keys = response.keys;
-        alert( "Oracle Keychain Created" );
-        $('#keychain_url').val( payload.keychainUrl );
-        $('#keychain_key').val( keys.default[0] );
-    }
-    
-    function oracleGetKeychain(field_id) {
-        // if not oracle host
-        var keychainUrl = $( field_id ).val().trim();
-        if (!isHost( keychainUrl )) {
-            return false;
-        }
-    
-        var payload = { field_id : field_id, keychainUrl : keychainUrl };
-        $( '#keychainUrl_group' ).hide( );
-        CryptoCorp.GetKeychain( keychainUrl, oracleGetKeychainCallback, payload );
-        return true;
-    }
-    
-    function oracleGetKeychainCallback(response, payload) {
-        // fail
-        if (response.result != CryptoCorp.Result.SUCCESS) {
-            // error handling
-            alert( "Keychain Access Error: " + response.errorThrown );
-            return;
-        }
-        // success
-        var extpub = response.keys.default[0];
-        $( payload.field_id ).val( extpub );
-    
-        // $( '#keychainUrl_group').show();  DEBUG
-        $( '#keychainUrl' ).val( payload.keychainUrl );
-        alert( "Keychain Accessed" );
-    
-        generate_redemption_script( );
-    }
-    
     function getPubKeyHex( field_id ) {
         var pub_str = $('#'+field_id).val().trim();
         if (pub_str.match("^xpub")) {
@@ -764,9 +692,10 @@
     }
 
     function generate_redemption_script() {
-        // if key from oracle - bail here
+        // if an oracle keychain url used instead of a key
+        // call the oracle and bail here. the callback will regenerate the script
         for( var i = 1 ; i <= 3 ; i++ ) {
-            if (oracleGetKeychain('#pub'+i)) {
+            if (CCOracle.GetKeychain('#pub'+i)) {
                 return;
             }
         }
@@ -1376,7 +1305,7 @@
         for( var i=0; i<m ; i++) {
             // check for oracle url
             keychainUrl=$( '#txSec'+(i+1) ).val();
-            if( isHost(keychainUrl) ) {
+            if( CCOracle.isHost(keychainUrl) ) {
                 isOracle = true;
                 continue;
             }
@@ -1463,117 +1392,8 @@
             $('#txJSON').val("");
             $('#txHex').val("");
             // send to the oracle for partial 
-            oracleSignPartial( txHex, keychainUrl ) ;
+            CCOracle.SignPartial( txHex, keychainUrl ) ;
         }
-    }
-    
-    function oracleSignPartial(txHex, keychainUrl) {
-        // get the input transactions - blocking call
-        var inputScriptString = $( "#txRedemptionScript" ).val();
-        CryptoCorp.getInputTransactions( inputScriptString, function(response) {
-            if (response.result != CryptoCorp.Result.SUCCESS) {
-                alert( "Transaction Inputs Error: " + response.errorThrown );
-                return;
-            }
-            oracleSignPartialWithInputs(txHex, keychainUrl, response.data);
-        });
-    }
-    
-    function oracleSignPartialWithInputs(txHex, keychainUrl, inputTransactions) {
-        var inputScriptString = $( "#txRedemptionScript" ).val();
-        var inputScripts = [inputScriptString];
-        var signatureIndex = 1;
-        var chainPaths = [""]; // FIXME where is this coming from ?
-        var data = CryptoCorp.getSignTxData( signatureIndex, txHex, inputScripts, inputTransactions, chainPaths );
-        var payload = { "keychainUrl" : keychainUrl, "data" : data };
-        CryptoCorp.SignTx( keychainUrl, data, oracleSignPartialCallback, payload );
-    }
-    
-    function oracleSignPartialCallback(response, payload) {
-        // fail
-        if (response.result == CryptoCorp.Result.ERROR) {
-            // display the consolidated error message form the server
-            alert("Sign Transaction failed: " + response.errorThrown);
-            return;
-        }
-        // deferred
-        if (response.result == CryptoCorp.Result.DEFERRED) {
-            oracleDeferredTransaction(response.deferral, response.now, payload);
-            return;
-        }
-        // success - validate data
-        if (response.transaction === undefined || response.transaction.bytes === undefined) {
-            alert("Sign Transaction failed: Bad response");
-            return;
-        }
-        // sucess
-        // DEBUG $('#txHexHistory_group').show(); // the partial tx is shown
-        $('#txHex').val(response.transaction.bytes); // the full tx here
-        // $('#txJSON').val("Signed");
-        alert("Partial Transaction Signed");
-    }
-    
-    function oracleDeferredTransaction(deferral, serverNow, payload) {
-        //  delay
-        if (deferral.reason == CryptoCorp.Deferral.DELAY) {
-            var serverNowMilli = Date.parse( serverNow );
-            var untilMilli = Date.parse( deferral.until );
-            var timeout = untilMilli - serverNowMilli;
-            oracleSetDelayedResubmission( timeout, payload );
-            return;
-        }
-        alert( "Sign Transaction deferred: " + deferral.reason );
-    }
-    
-    function oracleSetDelayedResubmission(timeout, payload) {
-        // resubmit deferred
-        var confirmed = false;
-        setTimeout( function() {
-            if (confirmed) {
-                CryptoCorp.SignTx( payload.keychainUrl, payload.data, oracleDelayedResubmissionCallback, payload );
-            }
-        }, timeout );
-        // confirm resubmission
-        confirmed = confirm( "Transaction delayed for " + getMinutesString( timeout ) + " If you click OK make sure not to close this page." );
-        return;
-    }
-    
-    function getMinutesString(timeout) {
-        var minutes = Math.round( timeout / (1000 * 60) );
-        if (minutes < 1) {
-            return "less than a minute.";
-        }
-        if (minutes == 1) {
-            return "1 minute.";
-        }
-        return minutes + " minutes.";
-    }
-    
-    function oracleDelayedResubmissionCallback(response, payload) {
-        // fail
-        if (response.result == CryptoCorp.Result.ERROR) {
-            // error handling
-            alert( "Resubmission of Deferred Transaction failed: " + response.errorThrown );
-            return;
-        }
-        // deferred
-        if (response.result == CryptoCorp.Result.DEFERRED) {
-            // TODO another deferral - not good
-            var deferral = response.deferral;
-            alert( "Resubmission of Deferred Transaction failed: deferred again." );
-            return;
-        }
-        // success - validate data
-        if (response.transaction == undefined || response.transaction.bytes == undefined) {
-            alert( "Sign Transaction failed: Bad response" );
-            return;
-        }
-        // sucess
-        // $('#txHexHistory_group').show(); // the partial tx is shown
-        $( '#txHex' ).val( response.transaction.bytes );
-        // the full tx here
-        //$('#txJSON').val( "Signed" );
-        alert( "Deferred Transaction Signed" );
     }
     
     function parseInputs(unspent, addr) {
@@ -1718,6 +1538,205 @@
         var results = new RegExp('[\\?&]' + name + '=([^&#]*)').exec(window.location.href);
         return results && (results[1] || null);
     }
+    
+    var CCOracle = new function() {
+        
+        /*
+         * create a new keychain, using pii and all parameter definitions
+         * the api response contains the keychain extended public key
+         */
+        this.CreateKeychain = function(event) {
+            // parameters        
+            var rulesetId = $("#ruleset_id").val().trim();
+            var value = $("#velocity_value").val();
+            var asset = $("#velocity_asset").val();
+            var period = $("#velocity_period").val();
+            var delay = $("#delay_period").val();
+            var parameters = CryptoCorp.getParameters(value, asset, period, delay);
+            // PII        
+            var email = $("#pii_email").val().trim();
+            var first = $("#pii_first").val().trim();
+            var last = $("#pii_last").val().trim();
+            var phone = $("#pii_phone").val().trim();
+            var pii = CryptoCorp.getPii(email, first, last, phone);
+            var keychain_keys = [$("#keychain_user_key").val().trim()];
+            var data = CryptoCorp.getKeychainData(rulesetId, keychain_keys, parameters, pii);
+            // create keychain            
+            CryptoCorp.CreateKeychain(data, CCOracle.CreateKeychainCallback);
+            $('#keychain_key').val("");
+        }
+        
+        this.CreateKeychainCallback = function(response, payload) {
+            if (response.result != CryptoCorp.Result.SUCCESS) {
+                alert("Oracle Keychain Creation Error: " + response.errorThrown);
+                return;
+            }
+            // success
+            var keychainKey = response.keys.default[0];
+            var keychainUrl = payload.keychainUrl;
+            alert("Oracle Keychain Created");
+            $('#keychain_key').val(keychainKey);
+            $('#keychain_url').val(keychainUrl);
+        }
+        
+        /*
+         * get a key from a keychain
+         * the api response contains the keychain extended public key
+         * called when a keychain url is used instead of a key when generating a script
+         */
+        this.GetKeychain = function(field_id) {
+            // if not oracle host
+            var keychainUrl = $(field_id).val().trim();
+            if (!CCOracle.isHost(keychainUrl)) {
+                return false;
+            }
+        
+            var payload = { field_id : field_id, keychainUrl : keychainUrl };
+            CryptoCorp.GetKeychain(keychainUrl, CCOracle.GetKeychainCallback, payload);
+            $('#keychainUrl_group').hide();
+            return true;
+        }
+        
+        this.GetKeychainCallback = function(response, payload) {
+            // fail
+            if (response.result != CryptoCorp.Result.SUCCESS) {
+                // error handling
+                alert("Keychain Access Error: " + response.errorThrown);
+                return;
+            }
+            // success
+            var extpub = response.keys.default[0];
+            $(payload.field_id).val(extpub);
+        
+            $('#keychainUrl').val(payload.keychainUrl);
+            alert("Keychain Accessed");
+            // the extpub replaces the keychain url. now generate the script
+            generate_redemption_script();
+        }
+        
+        /* 
+         * partially sign a transaction with the oracle
+         */
+        this.SignPartial = function(txHex, keychainUrl) {
+            // get the input transactions from the block chain
+            var inputScriptString = $( "#txRedemptionScript" ).val();
+            CryptoCorp.getInputTransactions( inputScriptString, function(response) {
+                if (response.result != CryptoCorp.Result.SUCCESS) {
+                    alert( "Transaction Inputs Error: " + response.errorThrown );
+                    return;
+                }
+                // got the inputs - sign the tx
+                CCOracle.SignPartialWithInputs(txHex, keychainUrl, response.data);
+            });
+        }
+        
+        this.SignPartialWithInputs = function(txHex, keychainUrl, inputTransactions) {
+            // create the data object
+            var inputScriptString = $( "#txRedemptionScript" ).val();
+            var inputScripts = [inputScriptString];
+            var signatureIndex = 1;
+            var data = CryptoCorp.getSignTxData( signatureIndex, txHex, inputScripts, inputTransactions );
+            var payload = { "keychainUrl" : keychainUrl, "data" : data };
+            // sign
+            CryptoCorp.SignTx( keychainUrl, data, CCOracle.SignPartialCallback, payload );
+        }
+        
+        this.SignPartialCallback = function(response, payload) {
+            // fail
+            if (response.result == CryptoCorp.Result.ERROR) {
+                // display the consolidated error message form the server
+                alert("Sign Transaction failed: " + response.errorThrown);
+                return;
+            }
+            // deferred
+            if (response.result == CryptoCorp.Result.DEFERRED) {
+                CCOracle.DeferredTransaction(response.deferral, response.now, payload);
+                return;
+            }
+            // success - validate data
+            if (response.transaction === undefined || response.transaction.bytes === undefined) {
+                alert("Sign Transaction failed: Bad response");
+                return;
+            }
+            // success
+            $('#txHex').val(response.transaction.bytes); // the full tx here
+            alert("Partial Transaction Signed");
+        }
+        
+        /*
+         * handle a dferred transaction
+         */
+        this.DeferredTransaction = function(deferral, serverNow, payload) {
+            //  delay
+            if (deferral.reason == CryptoCorp.Deferral.DELAY) {
+                var serverNowMilli = Date.parse(serverNow);
+                var untilMilli = Date.parse(deferral.until);
+                var timeout = untilMilli - serverNowMilli;
+                // resubmit after timeout
+                CCOracle.SetDelayedResubmission(timeout, payload);
+                return;
+            }
+            alert("Sign Transaction deferred: " + deferral.reason);
+        }
+        
+        /*
+         * prompt the user to confirm the deferred transaction
+         * if confirmed, sign it again after the timeout
+         */
+        this.SetDelayedResubmission = function(timeout, payload) {
+            // resubmit deferred
+            var confirmed = false;
+            setTimeout(function() {
+                if (confirmed) {
+                    CryptoCorp.SignTx(payload.keychainUrl, payload.data, CCOracle.DelayedResubmissionCallback, payload);
+                }
+            }, timeout);
+            // confirm resubmission
+            confirmed = confirm("Transaction delayed for " + getMinutesString(timeout) + " If you click OK make sure not to close this page.");
+            return;
+        }
+        
+        this.DelayedResubmissionCallback = function(response, payload) {
+            // fail
+            if (response.result == CryptoCorp.Result.ERROR) {
+                // error handling
+                alert("Resubmission of Deferred Transaction failed: " + response.errorThrown);
+                return;
+            }
+            // deferred
+            if (response.result == CryptoCorp.Result.DEFERRED) {
+                alert("Resubmission of Deferred Transaction failed: deferred again.");
+                return;
+            }
+            // success - validate data
+            if (response.transaction == undefined || response.transaction.bytes == undefined) {
+                alert("Sign Transaction failed: Bad response");
+                return;
+            }
+            // success
+            // $('#txHexHistory_group').show(); // the partial tx is shown
+            var signedTransactionBytes = response.transaction.bytes;
+            $('#txHex').val(signedTransactionBytes);
+            // the full tx here
+            alert("Deferred Transaction Signed");
+        }
+        
+        this.isHost = function( host ) {
+            // TODO - elimiate multiple hits on partial URL
+            return (host.indexOf( "http") == 0) ;
+        }
+        
+        function getMinutesString(timeout) {
+            var minutes = Math.round(timeout / (1000 * 60));
+            if (minutes < 1) {
+                return "less than a minute.";
+            }
+            if (minutes == 1) {
+                return "1 minute.";
+            }
+            return minutes + " minutes.";
+        }
+    }
 
     $(document).ready( function() {
 
@@ -1779,7 +1798,9 @@
         $("#pubkey_order_next").on('click', pubkey_order_next );
         
         // oracle
-        $("#oracle_create_keychain_button").click( oracleCreateKeychain );
+        $("#oracle_create_keychain_button").click( CCOracle.CreateKeychain );
+        $('#txHexHistory_group').hide();
+        $('#keychainUrl_group').hide();
 
         //initializePublicKeys();
         reqUpdateLabel();
@@ -1798,7 +1819,6 @@
             txOnChangeRecoveryJson();
             txGetUnspent();
         }
-
 
         $('#txGetUnspent').click(txGetUnspent);
         $('#txShowBCI').click(txShowBCI);
@@ -1821,8 +1841,6 @@
         $('#txRemoveDest').click(txOnRemoveDest);
         $('#txSend').click(txSendCoinbin);
         $('#txSign').click(txSign);
-        $('#txHexHistory_group').hide();
-        $('#keychainUrl_group').hide();
 
         // converter
 
