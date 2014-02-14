@@ -24,6 +24,7 @@
     <script src="js/tx.js"></script>
     <script src="js/bitcoinsig.js"></script>
     <script src="js/brainwallet.js"></script>
+    <script src="js/uuid.js"></script>
     <script src="js/cryptocorp.js"></script>
   </head>
   <body onclick="" onkeypress="">
@@ -538,11 +539,20 @@
               </div>
               <hr>
               
-              <div class="form-group" id="keychain_user_key_group">
-                <label class="col-lg-2 control-label" for="keychain_user_key">User Public Key</label>
+              <div class="form-group" id="keychain_public_key_group">
+                <label class="col-lg-2 control-label" for="keychain_public_key">User Public Key</label>
                 <div class="col-lg-10 controls">
                   <div class="input-append">
-                    <input class="form-control" id="keychain_user_key" type="text" value="xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH" />
+                    <input class="form-control" id="keychain_public_key" type="text" value="xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH" />
+                  </div>
+                </div>
+              </div>
+              
+              <div class="form-group" id="keychain_backup_key_group">
+                <label class="col-lg-2 control-label" for="keychain_backup_key">User Backup Key</label>
+                <div class="col-lg-10 controls">
+                  <div class="input-append">
+                    <input class="form-control" id="keychain_backup_key" type="text" value="xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH" />
                   </div>
                 </div>
               </div>

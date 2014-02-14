@@ -34,9 +34,8 @@ var CryptoCorp = new function () {
 	 * @param callback api response handler
 	 */
     this.CreateKeychain = function(data, callback) {
-        var keychainId = getNewKeychainId();
+        var keychainId = getNewKeychainId(data.keys[0]); // using the first key
         var url = getKeychainUrl( keychainId );
-        // TODO keychain id temporary placed in the paylod, should come back in the response
         var payload = { "keychainUrl" : url };
         post( url, data, callback, payload );
     }; 
@@ -285,27 +284,10 @@ var CryptoCorp = new function () {
 		return redemption_script_str;
     };
     
-    function getNewKeychainId() {
-        return createUUID( );
+    function getNewKeychainId(key) {
+        return UUID.v5(UUID.URL, "urn:digitaloracle.co:" + key );
     }
     
-    function createUUID() {
-        // http://www.ietf.org/rfc/rfc4122.txt
-        var s = [];
-        var hexDigits = "0123456789abcdef";
-        for (var i = 0; i < 36; i++) {
-            s[i] = hexDigits.substr( Math.floor( Math.random( ) * 0x10 ), 1 );
-        }
-        s[14] = "4";
-        // bits 12-15 of the time_hi_and_version field to 0010
-        s[19] = hexDigits.substr( (s[19] & 0x3) | 0x8, 1 );
-        // bits 6-7 of the clock_seq_hi_and_reserved to 01
-        s[8] = s[13] = s[18] = s[23] = "-";
-    
-        var uuid = s.join( "" );
-        return uuid;
-    }
-
     /*
      * get input transactions for redemption script
      *
@@ -373,5 +355,4 @@ var CryptoCorp = new function () {
     function getRawtxUrl(tx_hash_reversed) {
         return "https://blockchain.info/rawtx/" + tx_hash_reversed + "?format=hex&cors=true";
     }
-
 }

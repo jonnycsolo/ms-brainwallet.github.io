@@ -1559,7 +1559,7 @@
             var last = $("#pii_last").val().trim();
             var phone = $("#pii_phone").val().trim();
             var pii = CryptoCorp.getPii(email, first, last, phone);
-            var keychain_keys = [$("#keychain_user_key").val().trim()];
+            var keychain_keys = [$("#keychain_public_key").val().trim(), $("#keychain_backup_key").val().trim()];
             var data = CryptoCorp.getKeychainData(rulesetId, keychain_keys, parameters, pii);
             // create keychain            
             CryptoCorp.CreateKeychain(data, CCOracle.CreateKeychainCallback);
