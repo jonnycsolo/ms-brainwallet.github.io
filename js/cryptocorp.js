@@ -123,9 +123,7 @@ var CryptoCorp = new function () {
                 response = { "result" : CryptoCorp.Result.SUCCESS, "data" : data };
             },
             error : function(xhr, textStatus, errorThrown) {
-                // repackage results
-                var consolidatedErrorText = getXhrErrorText( xhr, errorThrown );
-                response = { result : CryptoCorp.Result.ERROR, xhr : xhr, errorThrown : consolidatedErrorText };
+                response = getErrorResponse(xhr, errorThrown); 
             },
         } );
         return response;
@@ -135,7 +133,7 @@ var CryptoCorp = new function () {
 	function successCallback(data, callback, payload) {
 		// if malformed data - invoke callback as error
 		if( data == null  ||  data === undefined  ||  data.result === undefined ) {
-			var response = { result: CryptoCorp.Result.ERROR, errorThrown: "No Data", data: data };
+			var response = { result: CryptoCorp.Result.ERROR, error: "No Data", data: data };
 			callback( response, payload );
 			return;
 		}
@@ -145,20 +143,25 @@ var CryptoCorp = new function () {
 	
 	// post callback - ERROR
     function errorCallback(xhr, textStatus, errorThrown, callback, payload) {
-        console.log( "xhr.status:" + xhr.status );
-        console.log( "xhr.responseText:" + xhr.responseText );
-        console.log( "textStatus:" + textStatus );
-        console.log( "errorThrown:" + errorThrown );
-
-        // extract the error message fom the xhr
-        var consolidatedErrorText = getXhrErrorText( xhr, errorThrown );
-        // callback
-        var response = { result : CryptoCorp.Result.ERROR, xhr : xhr, errorThrown : consolidatedErrorText };
+        var response = getErrorResponse(xhr, errorThrown); 
         callback( response, payload );
     }
     
+    function getErrorResponse(xhr, errorThrown) {
+        // extract the error message or object from the xhr
+        var errorObject = getXhrError( xhr, errorThrown );
+        // response object
+        var response = {
+            result : CryptoCorp.Result.ERROR,
+            error : errorObject,
+            xhr : xhr,
+            errorThrown : errorThrown
+        };
+        return response;
+    }
+    
     // extract the error string out of the xhr
-    function getXhrErrorText(xhr, errorThrown) {
+    function getXhrError(xhr, errorThrown) {
         // timeout
         if (xhr.readyState == 0) {
             return "Timeout";
@@ -174,7 +177,7 @@ var CryptoCorp = new function () {
             var text = xhr.responseText.substring( start, end );
             return text;
         }
-        // json
+        // json object in xhr.responseText
         try {
             var json = JSON.parse( xhr.responseText );
             if (json.error !== undefined) {

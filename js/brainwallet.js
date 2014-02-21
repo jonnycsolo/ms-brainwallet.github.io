@@ -1568,7 +1568,7 @@
         
         this.CreateKeychainCallback = function(response, payload) {
             if (response.result != CryptoCorp.Result.SUCCESS) {
-                alert("Oracle Keychain Creation Error: " + response.errorThrown);
+                alert("Oracle Keychain Creation Error: " + response.error);
                 return;
             }
             // success
@@ -1601,7 +1601,7 @@
             // fail
             if (response.result != CryptoCorp.Result.SUCCESS) {
                 // error handling
-                alert("Keychain Access Error: " + response.errorThrown);
+                alert("Keychain Access Error: " + response.error);
                 return;
             }
             // success
@@ -1622,7 +1622,7 @@
             var inputScriptString = $( "#txRedemptionScript" ).val();
             CryptoCorp.getInputTransactions( inputScriptString, function(response) {
                 if (response.result != CryptoCorp.Result.SUCCESS) {
-                    alert( "Transaction Inputs Error: " + response.errorThrown );
+                    alert( "Transaction Inputs Error: " + response.error );
                     return;
                 }
                 // got the inputs - sign the tx
@@ -1645,7 +1645,7 @@
             // fail
             if (response.result == CryptoCorp.Result.ERROR) {
                 // display the consolidated error message form the server
-                alert("Sign Transaction failed: " + response.errorThrown);
+                alert("Sign Transaction failed: " + response.error);
                 return;
             }
             // deferred
@@ -1664,7 +1664,7 @@
         }
         
         /*
-         * handle a dferred transaction
+         * handle a deferred transaction
          */
         this.DeferredTransaction = function(deferral, serverNow, payload) {
             //  delay
@@ -1700,7 +1700,7 @@
             // fail
             if (response.result == CryptoCorp.Result.ERROR) {
                 // error handling
-                alert("Resubmission of Deferred Transaction failed: " + response.errorThrown);
+                alert("Resubmission of Deferred Transaction failed: " + response.error);
                 return;
             }
             // deferred
