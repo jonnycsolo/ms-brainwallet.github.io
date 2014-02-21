@@ -212,13 +212,10 @@ var CryptoCorp = new function () {
         };
     }
     
-    this.getPii = function(email, first, last, phone) {
-        // FIXME encrypt pii
-        var encrypted = "123456";
+    this.getPii = function(email, phone) {
         var pii = {
             "email" : email,
             "phone" : phone,
-            "encrypted" : encrypted
         };
         return pii;
     }
