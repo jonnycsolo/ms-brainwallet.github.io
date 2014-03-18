@@ -6,7 +6,7 @@ var CryptoCorp = new function () {
 	
 	// configurables
 
-    var host = "http://btc2.hyper.to";
+    var host = "http://s.digitaloracle.co";
     var KeyIndex = Object.freeze( {
         USER : 0,
         BACKUP : 1,
